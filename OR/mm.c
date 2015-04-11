@@ -157,6 +157,7 @@ char * split(size_t size, char * metaData)
      return metaBlockStart(metaData);
 }
 
+
 /* 
  * mm_init - initialize the malloc package.
  */
@@ -169,7 +170,35 @@ int mm_init(void) {
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc(size_t size) {
-    int newsize = ALIGN(size + SIZE_T_SIZE);
+     size_t asize = ALIGN(size);
+     char * addr = find_free_block(size);
+
+     if(strcmp(addr,"-1") == 0)
+     {
+         /* allocate a new memory block at the end of the heap */
+         int newsize = (int)asize + MSIZE;  
+         void *p = mem_sbrk(newsize);
+         if (p == (void *)-1) {
+	          return NULL;
+         } 
+         else
+         {
+               /* initialize new metadata */
+               char * metaData = (char*)p;
+               metaSetNext(metaData,"NULL");
+               metaSetPrev(metaData,PREV);
+               metaSetSize(metaData,asize);
+               metaSetStatus(metaData,1);
+               return (void *)metaBlockStart(metaData);
+         }
+     }
+     else
+     {
+          char * ret = split(size, addr);
+          return (void *)ret;
+     }
+/* original code */
+/*    int newsize = ALIGN(size + SIZE_T_SIZE);
     void *p = mem_sbrk(newsize);
 
     if (p == (void *)-1) {
@@ -178,6 +207,7 @@ void *mm_malloc(size_t size) {
         *(size_t *)p = size;
         return (void *)((char *)p + SIZE_T_SIZE);
     }
+*/
 }
 
 /*
