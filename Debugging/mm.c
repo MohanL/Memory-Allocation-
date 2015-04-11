@@ -170,7 +170,9 @@ char * find_free_block(size_t size)
         	  // added in new conditions
         	  size_t a= metaSize(current);
         	  size_t b = a - size-MSIZE;
-              if((metaStatus(current) == 0) && (metaSize(current) >= size) && (b == ALIGN(b)))
+              /* modified for reallocate.rep */
+              //if((metaStatus(current) == 0) && (metaSize(current) >= size) && (b == ALIGN(b)))
+              if((metaStatus(current) == 0) && (a>= size) && (b == ALIGN(b)))
               {
             	  printf("ckpt17: original memroy block size : %d\n",a);
             	  printf("ckpt18: after split, the block size should be : %d\n",size);
@@ -406,10 +408,15 @@ void mm_free(void *ptr)
  */
 void *mm_realloc(void *ptr, size_t size) {
  /* modified version of code */
+     printf("ckpt26: realloc called\n");
 	if((ptr < mem_heap_lo())||(ptr > mem_heap_hi()))
-		return mm_malloc(size);
-	if (size == 0)
+     {
+          printf("ckpt22: ptr is NULL in memory reallocation\n");
+          return mm_malloc(size);
+	}
+     if (size == 0)
 	{
+          printf("ckpt23: size is 0 in memory reallocation\n");
 		mm_free(ptr);
 		return NULL;
 	}
@@ -418,10 +425,12 @@ void *mm_realloc(void *ptr, size_t size) {
 
 	if((ptr > mem_heap_lo())&&(ptr < mem_heap_hi()) && asize == metaSize(metaData))
 	{
+          printf("ckpt24: size = metasize, dont' move block in mm_reallocation\n");
 		return NULL;
 	}
 	else if ((ptr > mem_heap_lo())&&(ptr < mem_heap_hi())&& asize != metaSize(metaData))
 	{
+          printf("ckpt25: needs to move memory block aroundin mm_reallocation\n");
 		void * addr = mm_malloc(asize);
 		memcpy(addr,ptr,asize);
 		/* free the original block is the original is actually moved */

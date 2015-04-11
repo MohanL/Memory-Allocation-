@@ -223,6 +223,7 @@ int mm_init(void) {
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc(size_t size) {
+     printf("hello, I am in malloc\n");
      size_t asize = ALIGN(size);
      char * addr = find_free_block(asize);
 
