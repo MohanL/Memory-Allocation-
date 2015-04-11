@@ -64,7 +64,10 @@ char * metaNext(char * metaData)
 }
 void metaSetNext(char * metaData, char * value)
 {
-     *(char* *)metaData = value;
+     if(strcmp(metaData,"NULL")!=0)
+           *(char* *)metaData = value;
+     else
+          printf("set next error, metaData is NULL\n");
 }
 
 char * metaPrev(char * metaData)
@@ -74,8 +77,14 @@ char * metaPrev(char * metaData)
 }
 void metaSetPrev(char * metaData, char * value)
 {
-     char * addr = (char *)((int)metaData + CSIZE);
-     *(char* *)addr = value;
+      
+     if(strcmp(metaData,"NULL")!=0)
+     { 
+           char * addr = (char *)((int)metaData + CSIZE);
+          *(char* *)addr = value;
+     }
+     else
+          printf("set prev error, metaData is NULL\n");
 }
 
 size_t metaSize(char * metaData)
@@ -85,8 +94,13 @@ size_t metaSize(char * metaData)
 }
 void metaSetSize(char * metaData, size_t value)
 {
-     char * addr = (char *)((int)metaData + CSIZE+CSIZE);
-     *(size_t *)addr = value;
+     if(strcmp(metaData,"NULL")!=0)
+     {
+           char * addr = (char *)((int)metaData + CSIZE+CSIZE);
+          *(size_t *)addr = value;
+     }
+     else
+          printf("set size error, metaData is NULL\n");
 }
 
 int metaStatus(char * metaData)
@@ -96,8 +110,13 @@ int metaStatus(char * metaData)
 }
 void metaSetStatus(char * metaData, int value)
 {
-     char * addr = (char *)((int)metaData + CSIZE+CSIZE+SSIZE);
-     *(int *)addr = value;
+     if(strcmp(metaData,"NULL")!=0)
+     {
+          char * addr = (char *)((int)metaData + CSIZE+CSIZE+SSIZE);
+          *(int *)addr = value;
+     }
+     else
+          printf("set status error, metaData is NULL\n");
 }
 /* return the start address of a memory block */
 char *metaBlockStart(char * metaData)
@@ -157,6 +176,23 @@ char * split(size_t size, char * metaData)
      return metaBlockStart(metaData);
 }
 
+void leftFusion(char * left, char * current)
+{
+     metaSetSize(left, metaSize(left)+MSIZE+metaSize(current));
+     metaSetNext(left, metaNext(current));
+}
+void rightFusion(char *right, char * current)
+{
+     metaSetSize(current,metaSize(right)+MSIZE+metaSize(current));
+     metaSetNext(current,metaNext(right));
+}
+
+void doubleFusion(char * left, char * current, char * right)
+{
+     metaSetSize(left, metaSize(left)+metaSize(right)+2*MSIZE+metaSize(current));
+     metaSetNext(left, metaNext(right));
+     metaSetPrev(metaNext(right),left);
+}
 
 /* 
  * mm_init - initialize the malloc package.
@@ -213,7 +249,46 @@ void *mm_malloc(size_t size) {
 /*
  * mm_free - Freeing a block does nothing.
  */
-void mm_free(void *ptr) { }
+/* feed in the start address of a block */
+void mm_free(void *ptr)
+{
+          char * metaData = blockMetaStart((char*)ptr);
+          if(strcmp(metaData,"-1") == 0)
+               return NULL;
+          else
+          {
+               metaSetStatus(metaData,0);
+               char * prev = metaPrev(metaData);
+               char * next = metaNext(metaData);
+               /* left block is free and right block is taken */
+               /* left fusion case 1: left block is free and right block is null*/
+               if( (strcmp(prev,"NULL")!=0)&&(strcmp(next,"NULL")==0)&&(metaStatus(prev)==0) )
+               {
+                    leftFusion(prev,metaData);          
+               }
+               else if( (strcmp(prev,"NULL")!=0)&&(strcmp(next,"NULL")!=0)&&(metaStatus(prev)==0)&&(metaStatus(next)==1) )
+               {
+                    leftFusion(prev,metaData);
+                    metaSetPrev(next,prev);
+               }
+               else if( (strcmp(next,"NULL")!=0)&&(strcmp(prev,"NULL")==0)&&(metaStatus(next)==0) )
+               {
+                    rightFusion(next,metaData);
+               }
+               else if( (strcmp(next,"NULL")!=0)&&(strcmp(prev,"NULL")!=0)&&(metaStatus(next)==0)&&(metaStatus(prev)==1) )
+               {
+                    rightFusion(next,metaData);
+                    char * next_next = metaNext(next);
+                    if(strcmp(next_next,"NULL")!=0)
+                         metaSetPrev(next_next,metaData);
+               }
+               /* two neightbours fusion */
+               else if( (strcmp(next,"NULL")!=0)&&(strcmp(prev,"NULL")!=0)&&(metaStatus(next)==0)&&(metaStatus(prev)==0) )
+               {
+                    doubleFusion(prev,metaData,next);                    
+               }
+          }
+}
 
 /*
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
