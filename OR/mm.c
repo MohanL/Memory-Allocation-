@@ -318,6 +318,44 @@ void mm_free(void *ptr)
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
 void *mm_realloc(void *ptr, size_t size) {
+     
+     size_t real_size = ALIGN(size);
+     char * metaData = blockMetaStart((char*) ptr);
+     size_t msize = metaSize(metaData);
+
+     /* we don't need to move it around */
+     if(real_size < msize)
+     {
+          /* insert new metadata */
+          if( msize - real_size > MSIZE)
+          {
+               char * new =(char *)((int)metaBlockStart(metaData) + real_size);
+               metaSetNext(new,metaNext(metaData));
+               metaSetNext(metaData,new);
+               metaSetPrev(new,metaData);
+               metaSetPrev(metaNext(metaData),new);
+               metaSetSize(new,metaSize(metaData)-real_size-MSIZE);
+               metaSetSize(metaData,real_size);
+               metaSetStatus(new,0);
+           }
+               return ptr;
+          
+     }
+     else
+     {    /* we could move it around */
+     
+          void * newptr = mm_malloc(real_size);
+          if(newptr ==NULL)
+          {
+               return NULL;
+          }
+          memcpy(newptr,ptr,size);
+          mm_free(ptr);
+          return newptr;
+     }
+}
+/* original code for mm_realloc*/
+/*
     void *oldptr = ptr;
     void *newptr;
     size_t copySize;
@@ -336,4 +374,4 @@ void *mm_realloc(void *ptr, size_t size) {
     mm_free(oldptr);
 
     return newptr;
-}
+*/
