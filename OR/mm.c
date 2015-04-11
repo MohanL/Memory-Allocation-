@@ -173,6 +173,10 @@ char * split(size_t size, char * metaData)
      metaSetSize(new,oldsize-size-MSIZE);
      metaSetStatus(new,0);
 
+     /* update global variables */
+     TUAB += size+MSIZE;
+     TFAB = TFAB-size-MSIZE;
+     
      return metaBlockStart(metaData);
 }
 
@@ -180,11 +184,17 @@ void leftFusion(char * left, char * current)
 {
      metaSetSize(left, metaSize(left)+MSIZE+metaSize(current));
      metaSetNext(left, metaNext(current));
+     /* update global variables */
+     TUAB = TUAB -MSIZE -metaSize(current);
+     TFAB = TFAB +MSIZE +metaSize(current);
 }
 void rightFusion(char *right, char * current)
 {
      metaSetSize(current,metaSize(right)+MSIZE+metaSize(current));
      metaSetNext(current,metaNext(right));
+     /* update global variables */
+     TUAB = TUAB -MSIZE -metaSize(right);
+     TFAB = TFAB +MSIZE +metaSize(right);
 }
 
 void doubleFusion(char * left, char * current, char * right)
@@ -192,12 +202,19 @@ void doubleFusion(char * left, char * current, char * right)
      metaSetSize(left, metaSize(left)+metaSize(right)+2*MSIZE+metaSize(current));
      metaSetNext(left, metaNext(right));
      metaSetPrev(metaNext(right),left);
+     /* update global variables */
+     TUAB = TUAB -2*MSIZE -metaSize(current)-metaSize(right);
+     TFAB = TFAB +2*MSIZE +metaSize(current)+metaSize(right);
 }
 
 /* 
  * mm_init - initialize the malloc package.
  */
 int mm_init(void) {
+    TUAB = 0;
+    TFAB = 0;
+    TAB = mem_heapsize();
+    PREV = "NULL";
     return 0;
 }
 
@@ -207,7 +224,7 @@ int mm_init(void) {
  */
 void *mm_malloc(size_t size) {
      size_t asize = ALIGN(size);
-     char * addr = find_free_block(size);
+     char * addr = find_free_block(asize);
 
      if(strcmp(addr,"-1") == 0)
      {
@@ -225,12 +242,17 @@ void *mm_malloc(size_t size) {
                metaSetPrev(metaData,PREV);
                metaSetSize(metaData,asize);
                metaSetStatus(metaData,1);
+               
+               /*update global variables */
+               TUAB += newsize;
+               TAB = mem_heapsize();
+               PREV = metaData;
                return (void *)metaBlockStart(metaData);
          }
      }
      else
      {
-          char * ret = split(size, addr);
+          char * ret = split(asize, addr);
           return (void *)ret;
      }
 /* original code */
@@ -288,6 +310,8 @@ void mm_free(void *ptr)
                     doubleFusion(prev,metaData,next);                    
                }
           }
+          /*coalition process */
+          
 }
 
 /*
