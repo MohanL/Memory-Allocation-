@@ -67,9 +67,8 @@ char * metaNext(char * metaData)
 }
 void metaSetNext(char * metaData, char * value)
 {
-	 printf("yo I am being called\n");
-     if(strcmp(metaData, NVALUE)!=0)
-           *(char* *)metaData = value;
+     if(metaData != NVALUE)
+    	 *(char* *)metaData = value;
      else
           printf("set next error, metaData is NULL\n");
 }
@@ -166,8 +165,8 @@ char * find_free_block(size_t size)
           while(current < (char *)mem_heap_hi())
           {
 
-        	  printf("ckpt9 - status of metadata we're inspecting\n");
-        	  mm_mallocStatus(current, NULL);
+        	 // printf("ckpt9 - status of metadata we're inspecting\n");
+        	  //mm_mallocStatus(current, NULL);
               if((metaStatus(current) == 0) && (metaSize(current) >= size))
                     return current;
                else
@@ -257,7 +256,7 @@ void *mm_malloc(size_t size) {
 
 		               printf("ckpt4\n");
 	        		   //2nd or more metadata
-					   metaSetNext(metaData,"NULL");
+					   metaSetNext(metaData,(char * )NVALUE);
 					   metaSetPrev(metaData,PREV);
 					   metaSetSize(metaData,asize);
 					   metaSetStatus(metaData,1);
