@@ -167,8 +167,16 @@ char * find_free_block(size_t size)
 
         	 // printf("ckpt9 - status of metadata we're inspecting\n");
         	  //mm_mallocStatus(current, NULL);
-              if((metaStatus(current) == 0) && (metaSize(current) >= size))
-                    return current;
+        	  // added in new conditions
+        	  size_t a= metaSize(current);
+        	  size_t b = a - size-MSIZE;
+              if((metaStatus(current) == 0) && (metaSize(current) >= size) && (b == ALIGN(b)))
+              {
+            	  printf("ckpt17: original memroy block size : %d\n",a);
+            	  printf("ckpt18: after split, the block size should be : %d\n",size);
+                  printf("ckpt20: find a free block called in malloc\n");
+            	  return current;
+              }
                else
                {
                     //if(strcmp(current,"NULL")!=0)
@@ -178,16 +186,20 @@ char * find_free_block(size_t size)
                          return (char *)NVALUE;
                }
           }
+          printf("ckpt21: no valid free block found in find free block function\n");
+          return (char * )NVALUE;
      }
 }
 
 /* split a free block(size_t, char * metadata) */
 char * split(size_t size, char * metaData)
 {
+	 printf("ckpt14 : beginning of the split function\n");
      size_t oldsize = metaSize(metaData);
      metaSetSize(metaData,size);
      metaSetStatus(metaData,1);
 
+     printf("ckpt15: setting new metaData in split\n");
      char * new = (char *)((int)metaBlockStart(metaData)+size);
      metaSetNext(new, metaNext(metaData));
      metaSetPrev(new,metaData);
@@ -199,7 +211,7 @@ char * split(size_t size, char * metaData)
      /* update global variables */
      TUAB += size+MSIZE;
      TFAB = TFAB-size-MSIZE;
-
+     printf("ckpt16: end of split function\n");
      return metaBlockStart(metaData);
 }
 
@@ -216,7 +228,7 @@ void mm_mallocStatus(char *  metaData, size_t size){
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc(size_t size) {
-
+	printf("ckpt1 start of malloc \n");
 	printf("Malloc called with size: %d\n", size);
 
 	size_t asize = ALIGN(size);
@@ -229,7 +241,7 @@ void *mm_malloc(size_t size) {
 	     //printf("the RETURNED %p", addr);
 
 	     //if(strcmp(&addr,"b") == 0) THIS IS A WORKING THING.
-         printf("ckpt1\n");
+
 	     if(addr == (char *) NVALUE) //THIS IS MAYBE A WORKING THING.
 	     {
 	    	 printf("No block big enough for insertion found\n");
@@ -281,7 +293,7 @@ void *mm_malloc(size_t size) {
 	     }
 	     else
 	     {
-	    	  printf("split is called\n");
+	    	  printf("ckpt19: found a free block in malloc function, about to call split\n");
 	          char * ret = split(asize, addr);
 	          return (void *)ret;
 	     }
@@ -337,39 +349,40 @@ void doubleFusion(char * left, char * current, char * right)
 /* mm_free - feed in the start address of a block */
 void mm_free(void *ptr)
 {
-/*
+
 		printf("free called, trying to free block at %p\n", ptr);
 		char * metaData = blockMetaStart((char*)ptr);
 
-         if(strcmp(metaData,"-1") == 0){
-        	 printf("Returned NULL from free\n");
+		//Invalid Address
+         if(metaData < (char *) mem_heap_lo() | metaData > (char *) mem_heap_hi()){
+        	 printf("ckpt10 - invalid md address in free.\n");
               return NULL;
          }
+         //Valid Address
          else
          {
-        	  printf("about to update metadata at %p & about to fusion\n", metaData);
-              metaSetStatus(metaData,0);
+        	  printf("ckpt11 - about to update metadata at %p & about to fusion\n", metaData);
+
+              metaSetStatus(metaData,0);					 //change status of block to free
               char * prev = metaPrev(metaData);
-              printf("mdPrev = %p\n", prev);
               char * next = metaNext(metaData);
-              printf("mdNext = %p\n", next);
               // left block is free and right block is taken /
               // left fusion case 1: left block is free and right block is null/
-              printf("lol its baad");
-              if( (strcmp(prev,"NULL")!=0)&&(strcmp(next,"NULL")==0)&&(metaStatus(prev)==0) )
+             // if( (strcmp(prev,"NULL")!=0)&&(strcmp(next,"NULL")==0)&&(metaStatus(prev)==0) )
+              if( (prev != NVALUE)&&(next == NVALUE)&&(metaStatus(prev)==0) )
               {
                    leftFusion(prev,metaData);
               }
-              else if( (strcmp(prev,"NULL")!=0)&&(strcmp(next,"NULL")!=0)&&(metaStatus(prev)==0)&&(metaStatus(next)==1) )
+              else if( ( prev != NVALUE )&&( next != NVALUE )&&(metaStatus(prev)==0)&&(metaStatus(next)==1) )
               {
                    leftFusion(prev,metaData);
                    metaSetPrev(next,prev);
               }
-              else if( (strcmp(next,"NULL")!=0)&&(strcmp(prev,"NULL")==0)&&(metaStatus(next)==0) )
+              else if( (next != NVALUE )&&( prev == NVALUE )&&(metaStatus(next)==0) )
               {
                    rightFusion(next,metaData);
               }
-              else if( (strcmp(next,"NULL")!=0)&&(strcmp(prev,"NULL")!=0)&&(metaStatus(next)==0)&&(metaStatus(prev)==1) )
+              else if( ( next != NVALUE )&&(prev != NVALUE)&&(metaStatus(next)==0)&&(metaStatus(prev)==1) )
               {
                    rightFusion(next,metaData);
                    char * next_next = metaNext(next);
@@ -377,14 +390,15 @@ void mm_free(void *ptr)
                         metaSetPrev(next_next,metaData);
               }
               // two neightbours fusion /
-              else if( (strcmp(next,"NULL")!=0)&&(strcmp(prev,"NULL")!=0)&&(metaStatus(next)==0)&&(metaStatus(prev)==0) )
+              else if( (next != NVALUE)&&( prev != NVALUE )&&(metaStatus(next)==0)&&(metaStatus(prev)==0) )
               {
                    doubleFusion(prev,metaData,next);
               }
-              else{ printf("ERROR\n");}
+              else{
+            	  printf("chpt12 - No conditions hit.\n");
+              }
          }
          //coalition process /
-*/
 }
 
 /*
