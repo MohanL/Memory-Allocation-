@@ -43,6 +43,12 @@ team_t team = {
 
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
+/* global variables */
+size_t TUAB; /* total allocated and used bytes */ 
+size_t TFAB; /* total allcaoted but free bytes */
+size_t TAB;  /* total allocated bytes */
+char * PREV; /* previous meta data pointer */
+
 /* self-defined macros and functions */
 /* define meta data size */
 #define CSIZE sizeof(char *)
@@ -108,6 +114,49 @@ char *blockMetaStart(char * block)
      else
           return (char *)(-1);
 }
+
+/* helper functions lv2 */
+/* size is already aligned */
+/* return style 1. pointer points to a metadata 2. -1*/
+char * find_free_block(size_t size)
+{
+     char * current = mem_heap_lo();
+     if(mem_heapsize() == 0)
+          return (char *)(-1);
+     else
+     {
+          while(current < (char *)mem_heap_hi())
+          {
+               if((metaStatus(current) == 0) && (metaSize(current) >= size))
+                    return current; 
+               else
+               {
+                    if(strcmp(current,"NULL")!=0)     
+                         current = metaNext(current);
+                    else
+                         return (char *)(-1);
+               }
+          }
+     }
+}
+/* split a free block(size_t, char * metadata) */
+char * split(size_t size, char * metaData)
+{
+     size_t oldsize = metaSize(metaData);
+     metaSetSize(metaData,size);
+     metaSetStatus(metaData,1);
+
+     char * new = (char *)((int)metaBlockStart(metaData)+size);
+     metaSetNext(new, metaNext(metaData));
+     metaSetPrev(new,metaData);
+
+     metaSetNext(metaData,new);
+     metaSetSize(new,oldsize-size-MSIZE);
+     metaSetStatus(new,0);
+
+     return metaBlockStart(metaData);
+}
+
 /* 
  * mm_init - initialize the malloc package.
  */
