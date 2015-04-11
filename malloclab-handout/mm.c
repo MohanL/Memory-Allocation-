@@ -43,27 +43,77 @@ team_t team = {
 
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
-/* self defined macros */
-/* meta data size */
-#define MSIZE 32
+/* self-defined macros and functions */
+/* define meta data size */
+#define CSIZE sizeof(char *)
+#define SSIZE sizeof(size_t)
+#define ISIZE sizeof(int)
+#define RMSIZE (CSIZE+CSIZE+SSIZE+ISIZE)
+#define MSIZE ALIGN(RMSIZE)
 
-/* true or false value */
-#define TRUE 1
-#define FALSE 0
+/* getters and setters for the meta data*/
+char * metaNext(char * metaData)
+{
+    return *(char* *)metaData;
+}
+void metaSetNext(char * metaData, char * value)
+{
+     *(char* *)metaData = value;
+}
 
-size_t TUAB; /*  Total used and allocated bytes */
-size_t TFAB; /*  Total free but allocated bytes */
-size_t TAB;  /*  Total allocated bytes */
+char * metaPrev(char * metaData)
+{
+    char * addr = (char *)((int)metaData + CSIZE);
+    return *(char* *)addr;
+}
+void metaSetPrev(char * metaData, char * value)
+{
+     char * addr = (char *)((int)metaData + CSIZE);
+     *(char* *)addr = value;
+}
 
+size_t metaSize(char * metaData)
+{
+    char * addr = (char *)((int)metaData + CSIZE+CSIZE);
+    return *(size_t *)addr;
+}
+void metaSetSize(char * metaData, size_t value)
+{
+     char * addr = (char *)((int)metaData + CSIZE+CSIZE);
+     *(size_t *)addr = value;
+}
+
+int metaStatus(char * metaData)
+{
+    char * addr = (char *)((int)metaData + CSIZE+CSIZE+SSIZE);
+    return *(int *)addr;
+}
+void metaSetStatus(char * metaData, int value)
+{
+     char * addr = (char *)((int)metaData + CSIZE+CSIZE+SSIZE);
+     *(int *)addr = value;
+}
+/* return the start address of a memory block */
+char *metaBlockStart(char * metaData)
+{
+     char * addr = (char *)((int)metaData +MSIZE);
+     return addr;
+}
+/* return the meta data's address if given a block's address */
+char *blockMetaStart(char * block)
+{
+     char * addr = (char *)((int)block -MSIZE);
+     if( addr >= (char *)mem_heap_lo())
+          return addr;
+     else
+          return (char *)(-1);
+}
 /* 
  * mm_init - initialize the malloc package.
  */
 int mm_init(void) {
-    TUAB = 0; 
-    TFAB = 0;
-    TAB = mem_heapsize();
-    printf("hi, we're init'd\n"); 
     return 0;
+}
 
 /* 
  * mm_malloc - Allocate a block by incrementing the brk pointer.
@@ -74,7 +124,16 @@ void *mm_malloc(size_t size) {
     void *p = mem_sbrk(newsize);
 
     if (p == (void *)-1) {
-	    return NULL; } else { *(size_t *)p = size; return (void *)((char *)p + SIZE_T_SIZE); } } /* * mm_free - Freeing a block does nothing.  */
+	    return NULL;
+    } else {
+        *(size_t *)p = size;
+        return (void *)((char *)p + SIZE_T_SIZE);
+    }
+}
+
+/*
+ * mm_free - Freeing a block does nothing.
+ */
 void mm_free(void *ptr) { }
 
 /*
@@ -99,44 +158,4 @@ void *mm_realloc(void *ptr, size_t size) {
     mm_free(oldptr);
 
     return newptr;
-}
-
-/* self-defined helper function */
-/* find a free block */
-void *looking_for_free_block(size_t size) {
-
-     int size_looking_for = ALIGN(size);
-     char *current =(char *) mem_heap_lo();/* getting the first meta data */
-     if((TAB = mem_heapsize()) == 0)
-     {
-          printf("srsly, someting is wrong\n");
-          return (void *)(-1);
-     }
-     while((current != NULL)&&(current < mem_heap_hi()))
-     {
-          /* check if meta data is free or taken */
-          if((current + 24) == (int)0) /* case that the block is free*/
-          {
-               if((size_t)(current+16)>= size_looking_for){
-                    printf("%s <= %s\n",size_looking_for,(size_t)(current+1)6);
-                    return (void *)(current+MSIZE);
-                 }
-          }
-            /* we jump to the next memory block if it has a valid next  */
-               current = (char)( *current);  /* mohan's version of code Q */
-               current = (char *)(current + (size_t)(current+16)+ MSIZE); /* Evan's idea */
-      }          
-      return (void *)(-1);
-
-/*  original malloc function's code, used as reference
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    void *p = mem_sbrk(newsize);
-
-    if (p == (void *)-1) {
-	    return NULL;
-    } else {
-        *(size_t *)p = size;
-        return (void *)((char *)p + SIZE_T_SIZE);
-    }
-*/
 }
