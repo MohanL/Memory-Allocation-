@@ -104,7 +104,7 @@ void metaSetPrev(char * metaData, char * value)
           *(char* *)addr = value;
      }
      else{
-          //printf("set prev error, metaData is NULL\n");
+     //     //printf("set prev error, metaData is NULL\n");
      }
 }
 
@@ -187,8 +187,8 @@ void checkHeap()
      if(flag == 0){
           //printf("ckpt33: the heap is fine\nExit from checkHeap function\n");
      }
-     printHeapF();
-     printHeapB();
+    /* cprintHeapF();*/
+    /* cprintHeapB();*/
 
 }
 /* helper function lv1.5 */
@@ -545,8 +545,8 @@ void mm_free(void *ptr)
                    //printf("ckpt11.1.3: right fusion second case\n");
                    rightFusion(next,metaData);
                    char * next_next = metaNext(next);
-                   if(next_next != NVALUE)
-                        metaSetPrev(next_next,metaData);
+                   //if(next_next != NVALUE)
+                   metaSetPrev(next_next,metaData);
               }
               else if( (prev != NVALUE)&&(next == NVALUE)&&(metaStatus(prev)==0) )
               {
@@ -558,6 +558,9 @@ void mm_free(void *ptr)
               {
                    //printf("ckpt11.1.4: right fusion first case\n");
                    rightFusion(next,metaData);
+                   char * next_next = metaNext(next);
+                   //if(next_next != NVALUE)
+                   metaSetPrev(next_next,metaData);
               }
               else{
             	  //printf("ckpt12 -Fusion: No conditions hit.\n");
