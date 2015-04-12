@@ -323,6 +323,7 @@ void *mm_malloc(size_t size) {
 	               TAB = mem_heapsize();
 	               PREV = metaData;
 
+                    checkHeap();
 	               printf("SUCCESSFUL INSERT\n\n");
 	               return (void *)metaBlockStart(metaData);
 	         }
@@ -331,7 +332,8 @@ void *mm_malloc(size_t size) {
 	     {
 	    	  printf("ckpt19: found a free block in malloc function, about to call split\n");
 	          char * ret = split(asize, addr);
-	          return (void *)ret;
+	          checkHeap();
+               return (void *)ret;
 	     }
 
 
@@ -401,7 +403,7 @@ void mm_free(void *ptr)
 
 		//Invalid Address
          if((metaData < (char *) mem_heap_lo())|| (metaData > (char *) mem_heap_hi())){
-        	 printf("ckpt10 - invalid md address in free.\n");
+        	    printf("ckpt10 - invalid md address in free.\n");
               return NULL;
          }
          //Valid Address
@@ -444,6 +446,7 @@ void mm_free(void *ptr)
             	  printf("chpt12 - No conditions hit.\n");
               }
          }
+         checkHeap();
          //coalition process /
 }
 
