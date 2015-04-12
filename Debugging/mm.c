@@ -11,10 +11,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-
 #include "mm.h"
 #include "memlib.h"
 
@@ -45,9 +45,9 @@ team_t team = {
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
 /* global variables */
-size_t TUAB; /* total allocated and used bytes */
-size_t TFAB; /* total allcaoted but free bytes */
-size_t TAB;  /* total allocated bytes */
+uint64_t TUAB; /* total allocated and used bytes */
+uint64_t TFAB; /* total allcaoted but free bytes */
+uint64_t TAB;  /* total allocated bytes */
 char * PREV; /* previous meta data pointer */
 
 
@@ -55,8 +55,8 @@ char * PREV; /* previous meta data pointer */
 /* define meta data size */
 #define CSIZE sizeof(char *)
 #define SSIZE sizeof(size_t)
-#define ISIZE sizeof(int)
-#define RMSIZE (CSIZE+CSIZE+SSIZE+ISIZE)
+#define BSIZE sizeof(uint64_t)
+#define RMSIZE (CSIZE+CSIZE+SSIZE+BSIZE)
 #define MSIZE ALIGN(RMSIZE)
 #define NVALUE (mem_heap_lo()-1)
 
@@ -67,6 +67,9 @@ char * metaNext(char * metaData)
 }
 void metaSetNext(char * metaData, char * value)
 {
+	if(metaData == value){
+		printf("WE JUST ASSIGNED A MD NEXT TO ITSELF\n");\
+	}
      if(metaData != NVALUE)
     	 *(char* *)metaData = value;
      else
@@ -81,7 +84,12 @@ char * metaPrev(char * metaData)
 void metaSetPrev(char * metaData, char * value)
 {
 
-     if(strcmp(metaData,"NULL")!=0)
+	if(metaData == value){
+			printf("WE JUST ASSIGNED A MD PREV TO ITSELF\n");
+
+		}
+
+     if(metaData != NVALUE)
      {
            char * addr = (char *)((int)metaData + CSIZE);
           *(char* *)addr = value;
@@ -90,17 +98,17 @@ void metaSetPrev(char * metaData, char * value)
           printf("set prev error, metaData is NULL\n");
 }
 
-size_t metaSize(char * metaData)
+uint64_t metaSize(char * metaData)
 {
     char * addr = (char *)((int)metaData + CSIZE+CSIZE);
-    return *(size_t *)addr;
+    return *(uint64_t *)addr;
 }
-void metaSetSize(char * metaData, size_t value)
+void metaSetSize(char * metaData, uint64_t value)
 {
-     if(strcmp(metaData,"NULL")!=0)
+	if(metaData != NVALUE)
      {
            char * addr = (char *)((int)metaData + CSIZE+CSIZE);
-          *(size_t *)addr = value;
+          *(uint64_t *)addr = value;
      }
      else
           printf("set size error, metaData is NULL\n");
@@ -113,7 +121,7 @@ int metaStatus(char * metaData)
 }
 void metaSetStatus(char * metaData, int value)
 {
-     if(strcmp(metaData,"NULL")!=0)
+     if(metaData != NVALUE)
      {
           char * addr = (char *)((int)metaData + CSIZE+CSIZE+SSIZE);
           *(int *)addr = value;
@@ -164,24 +172,24 @@ char * find_free_block(size_t size)
     	  printf("ckpt8 - trying to find a free block\n");
           while(current < (char *)mem_heap_hi())
           {
-
+        	 if (current == metaNext(current))
+        		 exit(0);
         	 // printf("ckpt9 - status of metadata we're inspecting\n");
         	  //mm_mallocStatus(current, NULL);
         	  // added in new conditions
-        	  size_t a= metaSize(current);
-        	  size_t b = a - size-MSIZE;
-              /* modified for reallocate.rep */
-              //if((metaStatus(current) == 0) && (metaSize(current) >= size) && (b == ALIGN(b)))
-              if((metaStatus(current) == 0) && (a>= size) && (b == ALIGN(b)))
+        	  uint64_t a= metaSize(current);
+        	  uint64_t b = a - size-MSIZE;
+              if((metaStatus(current) == 0) && (metaSize(current) >= size) && (b == ALIGN(b)))
               {
-            	  printf("ckpt17: original memroy block size : %d\n",a);
-            	  printf("ckpt18: after split, the block size should be : %d\n",size);
+            	  printf("ckpt17: original memroy block size : %ud\n",a);
+            	  printf("ckpt18: after split, the block size should be : %ud\n",size);
                   printf("ckpt20: find a free block called in malloc\n");
             	  return current;
               }
                else
                {
                     //if(strcmp(current,"NULL")!=0)
+            	    //printf("Current Pointer: %p\n", current);
             	    if(current != (char *)NVALUE)
                          current = metaNext(current);
                     else
@@ -196,16 +204,23 @@ char * find_free_block(size_t size)
 /* split a free block(size_t, char * metadata) */
 char * split(size_t size, char * metaData)
 {
+
+	 if(size < 0){
+		 printf("chpt23: OMFG!!!! SIZE IS LESS THAN ZERO\n");
+	 	 return;
+	 }
 	 printf("ckpt14 : beginning of the split function\n");
-     size_t oldsize = metaSize(metaData);
+	 uint64_t oldsize = metaSize(metaData);
      metaSetSize(metaData,size);
      metaSetStatus(metaData,1);
 
      printf("ckpt15: setting new metaData in split\n");
      char * new = (char *)((int)metaBlockStart(metaData)+size);
      metaSetNext(new, metaNext(metaData));
-     metaSetPrev(new,metaData);
 
+     printf("ckpt27? - made it to the second metasetnext.");
+     metaSetPrev(new,metaData);
+     printf("ckpt26? - made it to the second metasetnext.");
      metaSetNext(metaData,new);
      metaSetSize(new,oldsize-size-MSIZE);
      metaSetStatus(new,0);
@@ -222,7 +237,7 @@ void mm_mallocStatus(char *  metaData, size_t size){
     printf("inserted MD at %p\n", metaData);
     printf("metaPrev = %p\n", metaPrev(metaData));
     printf("metaNext = %p\n", metaNext(metaData));
-    printf("metaSize = %d\n", metaSize(metaData));
+    printf("metaSize = %ud\n", metaSize(metaData));
 }
 
 /* 
@@ -233,7 +248,7 @@ void *mm_malloc(size_t size) {
 	printf("ckpt1 start of malloc \n");
 	printf("Malloc called with size: %d\n", size);
 
-	size_t asize = ALIGN(size);
+	uint64_t asize = ALIGN(size);
 		//printf("about to call find_free_block\n");
 	     char * addr = find_free_block(asize);
 
@@ -248,7 +263,7 @@ void *mm_malloc(size_t size) {
 	     {
 	    	 printf("No block big enough for insertion found\n");
 	         /* allocate a new memory block at the end of the heap */
-	         int newsize = (int)asize + MSIZE;
+	    	 uint64_t newsize = (uint64_t)asize + MSIZE;
 	         void *p = mem_sbrk(newsize);
 	         if (p == (void *)-1) {
 		          return NULL;
@@ -321,7 +336,10 @@ void *mm_malloc(size_t size) {
 void leftFusion(char * left, char * current)
 {
 	printf("leftFusion called\n");
+	printf("ORIGINAL CURRENT SIZE = %ud\n", metaSize(current));
+	printf("ORIGINAL LEFT SIZE = %ud\n", metaSize(left));
      metaSetSize(left, metaSize(left)+MSIZE+metaSize(current));
+     printf("NEW SIZE = %ud\n", metaSize(left));
      metaSetNext(left, metaNext(current));
      /* update global variables */
      TUAB = TUAB -MSIZE -metaSize(current);
@@ -330,7 +348,10 @@ void leftFusion(char * left, char * current)
 void rightFusion(char *right, char * current)
 {
 	printf("rightFusion called\n");
+	printf("ORIGINAL CURRENT SIZE = %ud\n", metaSize(current));
+	printf("ORIGINAL RIGHT SIZE = %ud\n", metaSize(right));
      metaSetSize(current,metaSize(right)+MSIZE+metaSize(current));
+     printf("NEW SIZE = %ud\n", metaSize(current));
      metaSetNext(current,metaNext(right));
      /* update global variables */
      TUAB = TUAB -MSIZE -metaSize(right);
@@ -340,9 +361,13 @@ void rightFusion(char *right, char * current)
 void doubleFusion(char * left, char * current, char * right)
 {
 	printf("doubleFusion called\n");
+	printf("ORIGINAL left SIZE = %ud\n", metaSize(left));
+	printf("ORIGINAL current SIZE = %ud\n", metaSize(current));
+	printf("ORIGINAL right SIZE = %ud\n", metaSize(right));
      metaSetSize(left, metaSize(left)+metaSize(right)+2*MSIZE+metaSize(current));
      metaSetNext(left, metaNext(right));
      metaSetPrev(metaNext(right),left);
+     printf("NEW SIZE = %ud\n", metaSize(left));
      /* update global variables */
      TUAB = TUAB -2*MSIZE -metaSize(current)-metaSize(right);
      TFAB = TFAB +2*MSIZE +metaSize(current)+metaSize(right);
@@ -388,7 +413,7 @@ void mm_free(void *ptr)
               {
                    rightFusion(next,metaData);
                    char * next_next = metaNext(next);
-                   if(strcmp(next_next,"NULL")!=0)
+                   if(next_next != NVALUE)
                         metaSetPrev(next_next,metaData);
               }
               // two neightbours fusion /
@@ -408,33 +433,46 @@ void mm_free(void *ptr)
  */
 void *mm_realloc(void *ptr, size_t size) {
  /* modified version of code */
-     printf("ckpt26: realloc called\n");
-	if((ptr < mem_heap_lo())||(ptr > mem_heap_hi()))
-     {
-          printf("ckpt22: ptr is NULL in memory reallocation\n");
-          return mm_malloc(size);
+	printf("ckpt25 - enter realloc\n");
+	printf("ENTERED REALLOC\n");
+	if((ptr < mem_heap_lo())||(ptr > mem_heap_hi())){
+
+		printf("chpk 25: realloc pointer NOT in range.\n");
+
+		printf("EXIT REALLOC\n");
+		return mm_malloc(size);
 	}
-     if (size == 0)
+	if (size == 0)
 	{
-          printf("ckpt23: size is 0 in memory reallocation\n");
+
+		printf("chpk 26: realloc size == 0.\n");
 		mm_free(ptr);
+
+		printf("EXIT REALLOC\n");
 		return NULL;
 	}
 	char * metaData = blockMetaStart((char *)ptr);
-	size_t asize = ALIGN(size);
+	uint64_t asize = ALIGN(size);
 
 	if((ptr > mem_heap_lo())&&(ptr < mem_heap_hi()) && asize == metaSize(metaData))
 	{
-          printf("ckpt24: size = metasize, dont' move block in mm_reallocation\n");
+
+		printf("chpk 27: realloc don't move the block.\n");
+
+		printf("EXIT REALLOC\n");
 		return NULL;
 	}
 	else if ((ptr > mem_heap_lo())&&(ptr < mem_heap_hi())&& asize != metaSize(metaData))
 	{
-          printf("ckpt25: needs to move memory block aroundin mm_reallocation\n");
+
+		printf("chpk 28: realloc copying block to a different location.\n");
 		void * addr = mm_malloc(asize);
 		memcpy(addr,ptr,asize);
 		/* free the original block is the original is actually moved */
 		mm_free(ptr);
+		printf("EXIT REALLOC\n");
+
+
 		return addr;
 	}
 }
