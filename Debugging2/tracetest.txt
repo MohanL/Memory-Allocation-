@@ -1,0 +1,25 @@
+amptjp-bal.rep
+amptjp.rep
+binary2-bal.rep
+binary2.rep
+binary-bal.rep
+binary.rep
+cccp-bal.rep
+cccp.rep
+coalescing-bal.rep
+coalescing.rep
+cp-decl-bal.rep
+cp-decl.rep
+expr-bal.rep
+expr.rep
+random2.rep
+random-bal.rep
+random.rep
+realloc2-bal.rep
+realloc2.rep
+realloc-bal.rep
+realloc.rep
+short1-bal.rep       41/100
+short1.rep           41/100
+short2-bal.rep       60/100
+short2.rep           60/100
