@@ -244,9 +244,14 @@ char * find_free_block(size_t size)
         	  //mm_mallocStatus(current, NULL);
         	  // added in new conditions
         	  int64_t a= metaSize(current);
-        	  //int64_t b = a-size-MSIZE;
-        	  int64_t b = a-size;
-              if((metaStatus(current) == 0) && (a >= size) && (b == ALIGN(b))&&(b>=0))
+        	  int64_t b = a-size-MSIZE;
+            /* Evan's wrong ideaaaa, fixed one trace file, failed majority of the others. lool*/
+        	  //int64_t b = a-size-MSIZE; 
+              if((metaStatus(current) == 0) && (a == size))
+              {
+                    return current;
+              }
+              else if((metaStatus(current) == 0) && (a >= size) && (b == ALIGN(b))&&(b>=0))
               {
                   //printf("ckpt20: free block found in the heap\n");
             	   //printf("ckpt17: original memroy block size : %d\n",a);
