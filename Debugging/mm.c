@@ -70,8 +70,8 @@ char * metaNext(char * metaData){
 
 void metaSetNext(char * metaData, char * value){
 	if(metaData == value){
-	//printf("ckpt28: ERROR :metadata next points to itself\n");\
-	return NULL;
+		//printf("ckpt28: ERROR :metadata next points to itself\n");\
+		return NULL;
 	}
 	/* this case is about this is now prev for the value */
 	if(metaData != NVALUE){
@@ -170,13 +170,14 @@ void checkHeap(){
 	}
 	//printf("\nckpt34.1\n");
 	char * end = PREV;
-	while(metaPrev(end) != NVALUE)
-	end = metaPrev(end);
+	while(metaPrev(end) != NVALUE){
+		end = metaPrev(end);
+	}
 
 	//printf("ckpt34.2\n");
 	if(end != mem_heap_lo()){
-	//printf("ckpt31: the negative direction of the linked list has an error\n");
-	flag = 1;
+		//printf("ckpt31: the negative direction of the linked list has an error\n");
+		flag = 1;
 	}
 	if(current != PREV){
 		//printf("ckpt32: the positive direction of linked list has an error\n");
@@ -226,6 +227,7 @@ char * find_free_block(size_t size){
 	else{
 		//printf("ckpt8 - starting to find a free block\n");
 		while(current < (char *)mem_heap_hi()){
+
 			/* modified by Mohan Liu */
 			//if (current == metaNext(current))
 			//	 exit(0);
@@ -234,8 +236,6 @@ char * find_free_block(size_t size){
 			// added in new conditions
 			int64_t a= metaSize(current);
 			int64_t b = a-size-MSIZE;
-			/* Evan's wrong ideaaaa, fixed one trace file, failed majority of the others. lool*/
-			//int64_t b = a-size-MSIZE;
 			if((metaStatus(current) == 0) && (a == size)){
 				return current;
 			}
@@ -258,7 +258,7 @@ char * find_free_block(size_t size){
 			}
 		}
 		//printf("ckpt21: no valid free block found in find free block function\n");
-	return (char * )NVALUE;
+		return (char * )NVALUE;
 	}
 }
 
@@ -472,9 +472,9 @@ void *mm_malloc(size_t size) {
 				//printf("SUCCESSFUL INSERT\n\n");
 				return (void *)metaBlockStart(metaData);
 			}
-		/*update global variables */
-		//TUAB += newsize;
-		//TAB = mem_heapsize();
+			/*update global variables */
+			//TUAB += newsize;
+			//TAB = mem_heapsize();
 		}
 	}
 
@@ -533,7 +533,6 @@ void mm_free(void *ptr){
 			//printf("ckpt11.1.3: right fusion second case\n");
 			rightFusion(next,metaData);
 			char * next_next = metaNext(next);
-			//if(next_next != NVALUE)
 			metaSetPrev(next_next,metaData);
 		}
 		else if( (prev != NVALUE)&&(next == NVALUE)&&(metaStatus(prev)==0) ){
@@ -544,7 +543,6 @@ void mm_free(void *ptr){
 			//printf("ckpt11.1.4: right fusion first case\n");
 			rightFusion(next,metaData);
 			char * next_next = metaNext(next);
-			//if(next_next != NVALUE)
 			metaSetPrev(next_next,metaData);
 		}
 		else{
