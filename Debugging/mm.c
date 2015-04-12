@@ -265,6 +265,12 @@ char * split(size_t size, char * metaData)
 		 printf("chpt23: OMFG!!!! SIZE IS LESS THAN ZERO\n");
 	 	 return NULL;
 	 }
+      if(size == metaSize(metaData))
+      { 
+           printf("ckpt45: no need to split block,perfect match in split()\n");
+           metaSetStatus(metaData,1);
+           return metaBlockStart(metaData);
+      }
 	 printf("ckpt14 : beginning of the split function\n");
 	 uint64_t oldsize = metaSize(metaData);
      metaSetSize(metaData,size);
@@ -275,10 +281,8 @@ char * split(size_t size, char * metaData)
      if(PREV == metaData)
           PREV = new;
      metaSetNext(new, metaNext(metaData));
-
-     printf("ckpt27:TBD\n");
+     metaSetPrev(metaNext(metaData),new);
      metaSetPrev(new,metaData);
-     printf("ckpt26:TBD\n");
      metaSetNext(metaData,new);
      metaSetSize(new,oldsize-size-MSIZE);
      metaSetStatus(new,0);
@@ -573,7 +577,7 @@ void *mm_realloc(void *ptr, size_t size) {
 	else if ((ptr > mem_heap_lo())&&(ptr < mem_heap_hi())&& asize != metaSize(metaData))
 	{
 
-		printf("chpk 28: realloc copying block to a different location.\n");
+		printf("chpk 28: realloc calls malloc to copy block to a different location.\n");
 		void * addr = mm_malloc(asize);
 		memcpy(addr,ptr,asize);
 		/* free the original block is the original is actually moved */
