@@ -433,80 +433,89 @@ void *mm_malloc(size_t size) {
 
 	     //if(strcmp(&addr,"b") == 0) THIS IS A WORKING THING.
 
-	     if(addr == (char *) NVALUE) //THIS IS MAYBE A WORKING THING.
+	     if(addr == (char *) NVALUE) 
 	     {
 	    	     //printf("ckpt1.5: No block big enough for insertion found\n");
 	          /* allocate a new memory block at the end of the heap */
-	    	     int64_t newsize = (int64_t)asize + MSIZE;
            
-           if((mem_heapsize()>0) && (metaStatus(PREV) == 0))
+           if((mem_heapsize()>0) && (metaStatus(PREV) == 0)&&((int64_t)asize > metaSize(PREV)))
            { 
-               void * p = mem_sbrk(asize - metaSize(PREV));
+               //printf("ckpt53: extending allocated heap size case 1\n");
+               void * p = mem_sbrk((int64_t)asize - metaSize(PREV));
                if( p == (void*)-1 )
                {
                     return NULL;
                }
                else
                {
-                    //printf("ckpt 52: simple extention heap\n");
+                    //printf("ckpt 52: simple extension heap\n");
                     metaSetSize(PREV,asize);
                     metaSetStatus(PREV,1);
                     checkHeap();
-	               //printf("SUCCESSFUL EXTENSION\n\n");
+	               //printf("SUCCESSFUL SIMPLE EXTENSION\n\n");
                     return (void *)metaBlockStart(PREV);
-
                }
            }
-           else{ 
-	       
-              void *p = mem_sbrk(newsize);
-	         if (p == (void *)-1) {
-		          return NULL;
-	         }
-	         else
-	         {
+           else
+           { 
+	    	    int64_t newsize = (int64_t)asize + MSIZE;
 	        	//This is for the first metaData we insert into the heap:
-	           //printf("ckpt2: insert a block at the end of the heap\n");
-	        	 char * metaData = (char*)p;
-	        	 if(TAB == 0){
-		               //printf("ckpt3: insert in the first block in the heap\n");
+	           //printf("ckpt2: extending allocated heap size case 2\n");
+	        	 //printf("ckpt2.1\n");
+	        	 //printf("ckpt2.2\n");
+	        	 if(mem_heapsize() == 0){
+                            void *p = mem_sbrk(newsize);
+	                       if (p == (void *)-1) {
+		                     return NULL;
+	                       }
+                            char * metaData = (char*)p;
+		                  //printf("ckpt3: insert in the first block in the heap\n");
 					   /* initialize new metadata */
 					   metaSetNext(metaData,(char *)NVALUE);
 					   metaSetPrev(metaData,(char *)NVALUE);
 					   metaSetSize(metaData,asize);
 					   metaSetStatus(metaData,1);
+                            PREV = metaData;
+                    checkHeap();
+	               /*status*/
+	               mm_mallocStatus(metaData, asize);
+	               //printf("SUCCESSFUL INSERT\n\n");
+	               return (void *)metaBlockStart(metaData);
 	        	 }
 	        	 else{
-
-		               //printf("ckpt4:insert in the 2nd or more block in the ehap\n");
-	        		   //2nd or more metadata
+                            void *p = mem_sbrk(newsize);
+	                       if (p == (void *)-1) {
+		                    return NULL;
+	                       }
+                            char * metaData = (char*)p;
+		                  //printf("ckpt4:insert in the 2nd or more block in the heap, current heapsize: %d\n",mem_heapsize());
+	        		        //2nd or more metadata
 					   metaSetNext(metaData,(char * )NVALUE);
 					   metaSetPrev(metaData,PREV);
 					   metaSetSize(metaData,asize);
 					   metaSetStatus(metaData,1);
-		               /* update the previous meta data */
-		               /* this line of code generate a segmentation error */
-		               metaSetNext(metaPrev(metaData),metaData);
-	        	 }
-               
+		                  /* update the previous meta data */
+		                  /* this line of code generate a segmentation error */
+		                  metaSetNext(PREV,metaData);
+                            PREV = metaData;
+                    checkHeap();
 	               /*status*/
 	               mm_mallocStatus(metaData, asize);
-
-              
-	               /*update global variables */
-	               TUAB += newsize;
-	               TAB = mem_heapsize();
-	               PREV = metaData;
-                    checkHeap();
 	               //printf("SUCCESSFUL INSERT\n\n");
 	               return (void *)metaBlockStart(metaData);
-               }
-	         }
+	        	 }
+               
+                     
+	               /*update global variables */
+	               //TUAB += newsize;
+	               //TAB = mem_heapsize();
+           }
 	     }
+          /* valid block inside the heap for split or perfect match */
 	     else
 	     {
-	    	  //printf("ckpt19: found a free block in malloc function, about to call split\n");
-	          char * ret = split(asize, addr);
+	    	     //printf("ckpt19: found a free block in malloc function, about to call split\n");
+               char * ret = split(asize, addr);
 	          checkHeap();
                return (void *)ret;
 	     }
