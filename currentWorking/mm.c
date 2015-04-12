@@ -10,7 +10,7 @@
  * comment that gives a high level description of your solution.
  */
 /* comment section */
-
+/* problems : find free block, right fusion case one, prevous doenst update correctly, coalition*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -168,18 +168,12 @@ void checkHeap()
      //printf("ckpt34: checking heap\n");
      int flag = 0;
      char * current= (char *)mem_heap_lo();
-     //printf("ckpt34.0\n");
      while(metaNext(current) != NVALUE)
-     {
           current = metaNext(current);
-          //printf("%p ",current);
-     }
-     //printf("\nckpt34.1\n");
      char * end = PREV;
      while(metaPrev(end) != NVALUE)
           end = metaPrev(end);
-     
-     //printf("ckpt34.2\n");
+
      if(end != mem_heap_lo())
      {
            //printf("ckpt31: the negative direction of the linked list has an error\n");
@@ -193,8 +187,8 @@ void checkHeap()
      if(flag == 0){
           //printf("ckpt33: the heap is fine\nExit from checkHeap function\n");
      }
-     printHeapF();
-     printHeapB();
+    /* cprintHeapF();*/
+    /* cprintHeapB();*/
 
 }
 /* helper function lv1.5 */
@@ -435,31 +429,10 @@ void *mm_malloc(size_t size) {
 
 	     if(addr == (char *) NVALUE) //THIS IS MAYBE A WORKING THING.
 	     {
-	    	     //printf("ckpt1.5: No block big enough for insertion found\n");
-	          /* allocate a new memory block at the end of the heap */
-	    	     int64_t newsize = (int64_t)asize + MSIZE;
-           
-           if((mem_heapsize()>0) && (metaStatus(PREV) == 0))
-           { 
-               void * p = mem_sbrk(asize - metaSize(PREV));
-               if( p == (void*)-1 )
-               {
-                    return NULL;
-               }
-               else
-               {
-                    //printf("ckpt 52: simple extention heap\n");
-                    metaSetSize(PREV,asize);
-                    metaSetStatus(PREV,1);
-                    checkHeap();
-	               //printf("SUCCESSFUL EXTENSION\n\n");
-                    return (void *)metaBlockStart(PREV);
-
-               }
-           }
-           else{ 
-	       
-              void *p = mem_sbrk(newsize);
+	    	 //printf("ckpt1.5: No block big enough for insertion found\n");
+	         /* allocate a new memory block at the end of the heap */
+	    	 int64_t newsize = (int64_t)asize + MSIZE;
+	         void *p = mem_sbrk(newsize);
 	         if (p == (void *)-1) {
 		          return NULL;
 	         }
@@ -488,19 +461,19 @@ void *mm_malloc(size_t size) {
 		               /* this line of code generate a segmentation error */
 		               metaSetNext(metaPrev(metaData),metaData);
 	        	 }
-               
+
 	               /*status*/
 	               mm_mallocStatus(metaData, asize);
 
-              
+
 	               /*update global variables */
 	               TUAB += newsize;
 	               TAB = mem_heapsize();
 	               PREV = metaData;
+
                     checkHeap();
 	               //printf("SUCCESSFUL INSERT\n\n");
 	               return (void *)metaBlockStart(metaData);
-               }
 	         }
 	     }
 	     else
@@ -510,7 +483,8 @@ void *mm_malloc(size_t size) {
 	          checkHeap();
                return (void *)ret;
 	     }
-}
+
+
 	//ORIGINAL MALLOC
   /*  int newsize = ALIGN(size + SIZE_T_SIZE);
     void *p = mem_sbrk(newsize);
@@ -523,6 +497,7 @@ void *mm_malloc(size_t size) {
     }
     */
 
+}
 
 
 
