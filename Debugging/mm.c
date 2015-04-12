@@ -9,7 +9,9 @@
  * NOTE TO STUDENTS: Replace this header comment with your own header
  * comment that gives a high level description of your solution.
  */
-
+/* comment section */
+/* problems : find free block, right fusion case one, prevous doenst update correctly, coalition*/
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
@@ -101,9 +103,8 @@ void metaSetPrev(char * metaData, char * value)
            char * addr = (char *)((int)metaData + CSIZE);
           *(char* *)addr = value;
      }
-     else
-     {
-          //printf("set prev error, metaData is NULL\n");
+     else{
+     //     //printf("set prev error, metaData is NULL\n");
      }
 }
 
@@ -114,16 +115,18 @@ int64_t metaSize(char * metaData)
 }
 void metaSetSize(char * metaData, int64_t value)
 {
-     if(value > mem_heapsize())
-          //printf("ckpt50: ERROR size overflow value: %d, heapsize %d\n",value,mem_heapsize());
-	if(metaData != NVALUE)
+     if(value > mem_heapsize()||value < 0)
+     {         
+           //printf("ckpt50: feed in size field corrupted size : %d\n",value);
+           exit(0);
+	}
+     if(metaData != NVALUE)
      {
            char * addr = (char *)((int)metaData + CSIZE+CSIZE);
           *(int64_t *)addr = value;
      }
-     else
-     {
-               //printf("set size error, metaData is NULL\n");
+     else{
+          //printf("set size error, metaData is NULL\n");
      }
 }
 
@@ -139,9 +142,8 @@ void metaSetStatus(char * metaData, int value)
           char * addr = (char *)((int)metaData + CSIZE+CSIZE+SSIZE);
           *(int *)addr = value;
      }
-     else
-     {
-               //printf("set status error, metaData is NULL\n");
+     else{
+          //printf("set status error, metaData is NULL\n");
      }
 }
 /* return the start address of a memory block */
@@ -156,8 +158,9 @@ char *blockMetaStart(char * block)
      char * addr = (char *)((int)block -MSIZE);
      if( addr >= (char *)mem_heap_lo())
           return addr;
-     else
+     else{
           return (char *)(-1);
+     }
 }
 /* check heap function, print out error if the heap is not linked by the linked list */
 void checkHeap()
@@ -181,11 +184,11 @@ void checkHeap()
            //printf("ckpt32: the positive direction of linked list has an error\n");
            flag = 1;
      }
-     if(flag == 0)
-     {     //printf("ckpt33: the heap is fine\nExit from checkHeap function\n");
+     if(flag == 0){
+          //printf("ckpt33: the heap is fine\nExit from checkHeap function\n");
      }
-     //printHeapF();
-     //printHeapB();
+    /* cprintHeapF();*/
+    /* cprintHeapB();*/
 
 }
 /* helper function lv1.5 */
@@ -193,11 +196,11 @@ void printHeapF()
 {
      //printf("ckpt43: traversing heap forwardly\n");
      char * current = (char*)mem_heap_lo();
-     //printf("%p(%u,%d)",current,metaSize(current),metaStatus(current));
+     //printf("%p(%d,%d)",current,metaSize(current),metaStatus(current));
      while(metaNext(current)!=NVALUE)
      {
           current = metaNext(current);
-          //printf("---->%p(%u,%d)",current,metaSize(current),metaStatus(current));
+          //printf("---->%p(%d,%d)",current,metaSize(current),metaStatus(current));
      }
      //printf("(%p)\n",PREV);
 }
@@ -205,19 +208,13 @@ void printHeapB()
 {
      //printf("ckpt43: traversing heap backwardly\n");
      char * current = PREV;
-     //printf("%p(%u,%d)",current,metaSize(current),metaStatus(current));
+     //printf("%p(%d,%d)",current,metaSize(current),metaStatus(current));
      while(metaPrev(current)!=NVALUE)
      {
           current = metaPrev(current);
-          //printf("---->%p(%u,%d)",current,metaSize(current),metaStatus(current));
+          //printf("---->%p(%d,%d)",current,metaSize(current),metaStatus(current));
      }
      //printf("(%p)\n",(char *)mem_heap_lo());
-}
-
-void printMetaInfo(char * metaData)
-{
-     //printf("print MetaInfo: M:%p B:%p N:%p P:%p\n",metaData,metaBlockStart(metaData),metaNext(metaData),metaPrev(metaData));
-     //printf("TAB:%d\n",mem_heapsize());
 }
 
 /* helper functions lv2 */
@@ -247,13 +244,20 @@ char * find_free_block(size_t size)
         	  //mm_mallocStatus(current, NULL);
         	  // added in new conditions
         	  int64_t a= metaSize(current);
-        	  int64_t b = a - size-MSIZE;
-              if((metaStatus(current) == 0) && (metaSize(current) >= size) && (b == ALIGN(b)))
+        	  int64_t b = a-size-MSIZE;
+            /* Evan's wrong ideaaaa, fixed one trace file, failed majority of the others. lool*/
+        	  //int64_t b = a-size-MSIZE; 
+              if((metaStatus(current) == 0) && (a == size))
+              {
+                    return current;
+              }
+              else if((metaStatus(current) == 0) && (a >= size) && (b == ALIGN(b))&&(b>=0))
               {
                   //printf("ckpt20: free block found in the heap\n");
-            	   //printf("ckpt17: original memroy block size : %u\n",a);
-            	   //printf("ckpt18: after split, the block size should be : %u\n",size);
-            	  return current;
+            	   //printf("ckpt17: original memroy block size : %d\n",a);
+            	   //printf("ckpt18: after split, the old block size should be : %d\n",size);
+            	   //printf("ckpt18.1: after split, the new block size should be : %d\n",b);
+                 return current;
               }
                else
                {
@@ -269,29 +273,33 @@ char * find_free_block(size_t size)
           return (char * )NVALUE;
      }
 }
-/* advanced mm_reallocation */
-void coalition()
-{
-     
-}
+
 /* split a free block(size_t, char * metadata) */
 char * split(size_t size, char * metaData)
 {
 
      //printf("ckpt38: preprocessing heap checking - split()\n");
      checkHeap();
-	 if(size < 0){
+	
+     if(size> mem_heapsize()){
+          //printf("ckpt51: object size field corrupted size : %d\n",size);
+     }
+     if((metaSize(metaData) > mem_heapsize())||(metaSize(metaData) < 0)){
+          //printf("ckpt52: metaData size field corrupted size : %d\n",metaSize(metaData));
+     }
+
+     if(size < 0){
 		 //printf("chpt23: OMFG!!!! SIZE IS LESS THAN ZERO\n");
 	 	 return NULL;
-	 }
-      if(size == metaSize(metaData))
-      { 
+	}
+     if(size == metaSize(metaData))
+     {
            //printf("ckpt45: no need to split block,perfect match in split()\n");
            metaSetStatus(metaData,1);
            return metaBlockStart(metaData);
-      }
-	 //printf("ckpt14 : beginning of the split function\n");
-	 int64_t oldsize = metaSize(metaData);
+     }
+	//printf("ckpt14 : beginning of the split function\n");
+	int64_t oldsize = metaSize(metaData);
      metaSetSize(metaData,size);
      metaSetStatus(metaData,1);
 
@@ -321,7 +329,7 @@ void mm_mallocStatus(char *  metaData, size_t size){
     //printf("inserted MD at %p\n", metaData);
     //printf("metaPrev = %p\n", metaPrev(metaData));
     //printf("metaNext = %p\n", metaNext(metaData));
-    //printf("metaSize = %u\n", metaSize(metaData));
+    //printf("metaSize = %d\n", metaSize(metaData));
 }
 
 
@@ -334,10 +342,10 @@ void leftFusion(char * left, char * current)
      int64_t current_size = metaSize(current);
      int64_t left_size = metaSize(left);
 
-	//printf("ORIGINAL CURRENT SIZE = %u\n", current_size);
-	//printf("ORIGINAL LEFT SIZE = %u\n", left_size);
+	//printf("ORIGINAL CURRENT SIZE = %d\n", current_size);
+	//printf("ORIGINAL LEFT SIZE = %d\n", left_size);
      metaSetSize(left, left_size+MSIZE+current_size);
-     //printf("NEW SIZE = %u\n", metaSize(left));
+     //printf("NEW SIZE = %d\n", metaSize(left));
      metaSetNext(left, metaNext(current));
      /* update global variables */
      TUAB = TUAB -MSIZE -metaSize(current);
@@ -354,10 +362,10 @@ void rightFusion(char *right, char * current)
      //printf("ckpt38: preprocessing heap check - rightFusion()\n");
      checkHeap();
 	//printf("rightFusion called\n");
-	//printf("ORIGINAL CURRENT SIZE = %u\n", metaSize(current));
-	//printf("ORIGINAL RIGHT SIZE = %u\n", metaSize(right));
+	//printf("ORIGINAL CURRENT SIZE = %d\n", metaSize(current));
+	//printf("ORIGINAL RIGHT SIZE = %d\n", metaSize(right));
      metaSetSize(current,metaSize(right)+MSIZE+metaSize(current));
-     //printf("NEW SIZE = %u\n", metaSize(current));
+     //printf("NEW SIZE = %d\n", metaSize(current));
      metaSetNext(current,metaNext(right));
      /* update global variables */
      TUAB = TUAB -MSIZE -metaSize(right);
@@ -373,13 +381,13 @@ void doubleFusion(char * left, char * current, char * right)
      //printf("ckpt40: preprocessing heap check - doubleFusion()\n");
      checkHeap();
 	//printf("doubleFusion called\n");
-	//printf("ORIGINAL left SIZE = %u\n", metaSize(left));
-	//printf("ORIGINAL current SIZE = %u\n", metaSize(current));
-	//printf("ORIGINAL right SIZE = %u\n", metaSize(right));
+	//printf("ORIGINAL left SIZE = %d\n", metaSize(left));
+	//printf("ORIGINAL current SIZE = %d\n", metaSize(current));
+	//printf("ORIGINAL right SIZE = %d\n", metaSize(right));
      metaSetSize(left, metaSize(left)+metaSize(right)+2*MSIZE+metaSize(current));
      metaSetNext(left, metaNext(right));
      metaSetPrev(metaNext(right),left);
-     //printf("NEW SIZE = %u\n", metaSize(left));
+     //printf("NEW SIZE = %d\n", metaSize(left));
      /* update global variables */
      TUAB = TUAB -2*MSIZE -metaSize(current)-metaSize(right);
      TFAB = TFAB +2*MSIZE +metaSize(current)+metaSize(right);
@@ -388,7 +396,7 @@ void doubleFusion(char * left, char * current, char * right)
      //printf("ckpt41: postprocessing heap check - doubleFusion()\n");
      checkHeap();
 }
-/* 
+/*
  * mm_init - initialize the malloc package.
  */
 int mm_init(void) {
@@ -406,8 +414,9 @@ int mm_init(void) {
 void *mm_malloc(size_t size) {
 	//printf("\nckpt1 start of malloc \n");
 	//printf("Malloc called with size: %d\n", size);
+	int64_t size2 = (unsigned int)size;
 
-	int64_t asize = ALIGN(size);
+	int64_t asize = ALIGN(size2);
 		////printf("about to call find_free_block\n");
 	     char * addr = find_free_block(asize);
 
@@ -464,7 +473,6 @@ void *mm_malloc(size_t size) {
 
                     checkHeap();
 	               //printf("SUCCESSFUL INSERT\n\n");
-                    printMetaInfo(metaData);
 	               return (void *)metaBlockStart(metaData);
 	         }
 	     }
@@ -473,7 +481,6 @@ void *mm_malloc(size_t size) {
 	    	  //printf("ckpt19: found a free block in malloc function, about to call split\n");
 	          char * ret = split(asize, addr);
 	          checkHeap();
-               printMetaInfo(ret);
                return (void *)ret;
 	     }
 
@@ -501,7 +508,7 @@ void mm_free(void *ptr)
 		//printf("\nfree called, trying to free block at %p\n", ptr);
 		char * metaData = blockMetaStart((char*)ptr);
 		//printf("free called, trying to free metadata of the corresponding block at %p\n", metaData);
-		
+
           //Invalid Address
          if((metaData < (char *) mem_heap_lo())|| (metaData > (char *) mem_heap_hi())){
         	    //printf("ckpt10 - invalid md address in free.\n");
@@ -511,16 +518,16 @@ void mm_free(void *ptr)
          else
          {
         	    //printf("ckpt11 - about to update metadata at %p & about to fusion\n", metaData);
-               
+
               metaSetStatus(metaData,0);					 //change status of block to free
               char * prev = metaPrev(metaData);
               char * next = metaNext(metaData);
-               
+
               //printf("ckpt11.1: pre-fusion heap checking\n");
               checkHeap();
               // left block is free and right block is taken /
               // left fusion case 1: left block is free and right block is null/
-         
+
               /* double fusion first  */
               if( (next != NVALUE)&&( prev != NVALUE )&&(metaStatus(next)==0)&&(metaStatus(prev)==0) )
               {
@@ -538,8 +545,8 @@ void mm_free(void *ptr)
                    //printf("ckpt11.1.3: right fusion second case\n");
                    rightFusion(next,metaData);
                    char * next_next = metaNext(next);
-                   if(next_next != NVALUE)
-                        metaSetPrev(next_next,metaData);
+                   //if(next_next != NVALUE)
+                   metaSetPrev(next_next,metaData);
               }
               else if( (prev != NVALUE)&&(next == NVALUE)&&(metaStatus(prev)==0) )
               {
@@ -551,6 +558,9 @@ void mm_free(void *ptr)
               {
                    //printf("ckpt11.1.4: right fusion first case\n");
                    rightFusion(next,metaData);
+                   char * next_next = metaNext(next);
+                   //if(next_next != NVALUE)
+                   metaSetPrev(next_next,metaData);
               }
               else{
             	  //printf("ckpt12 -Fusion: No conditions hit.\n");
