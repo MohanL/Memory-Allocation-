@@ -90,21 +90,26 @@ static void place(void *bp, size_t asize);
  * creates a heap with an initial free block
  */
 int mm_init(void) {
-
+     printf("\n\nckpt1: init() called\n");
     //create the initial empty heap; return -1 if heap space unavailable
     if((heap = mem_sbrk(8*WSIZE)) == NULL) return -1;
 
     PUT(heap, 0); //alignment padding
-
+    printf("ckpt2 - init()\n");
     PUT(heap + (1*WSIZE), PACK(DSIZE, 1)); //prologue header
     PUT(heap + (2*WSIZE), PACK(DSIZE, 1)); //prologue footer
     PUT(heap + (3*WSIZE), PACK(0, 1)); //epilogue header
     heap += (2*WSIZE);
     free_ptr = heap;
 
+    printf("ckpt3 - init()\n");
     //extend the empty heap with a free block of CHUNKSIZE bytes
-    if(extend_heap(CHUNKSIZE/WSIZE)==NULL) return -1;
-
+    if(extend_heap(CHUNKSIZE/WSIZE)==NULL)
+     {
+           printf("ckpt3.1 Initalization - init()\n"); 
+           return -1;
+     }
+    printf("ckpt5: EXIT init()\n");
     return 0;
 }
 
@@ -113,6 +118,8 @@ int mm_init(void) {
  *     Always allocate a block whose size is a multiple of the alignment.
  */
 void *mm_malloc(size_t size) {
+    
+    printf("\nckpt9.1.1 - START mm_malloc()\n");
     size_t newsize; //size of block to mm_malloc
     void *bp;
 
@@ -124,21 +131,29 @@ void *mm_malloc(size_t size) {
     else newsize = DSIZE * ((size+DSIZE+(DSIZE-1))/DSIZE);
 
     //try to find a suitable block in the free list
+    printf("ckpt9.1.2 - mm_malloc()\n");
     if((bp = find_fit(newsize))!=NULL){
         //place the block
+
+        printf("ckpt9.1.2.1 - mm_malloc()\n");
         place(bp, newsize);
+        printf("ckpt9.1.2.2 - mm_malloc()\n");
         return bp;
     }
 
     //if a suitable block does not exist, then expand the heap
+    printf("ckpt9.1.3 - mm_malloc()\n");
     size_t extension = MAX(newsize, CHUNKSIZE);
 
     //get more memory
     //error handling; unable to allocate more space to heap; return NULL
     if((bp = extend_heap(extension/WSIZE))==NULL) return NULL;
 
+    printf("ckpt9.1.4 - mm_malloc()\n");
     //place the block
     place(bp, newsize);
+
+    printf("ckpt9.1.5 - EXIT mm_malloc()\n");
     return bp;
 }
 
@@ -228,19 +243,22 @@ void *mm_realloc(void *ptr, size_t size) {
 
 //extends the heap with a new free block
 static void *extend_heap(size_t words) {
+
+    printf("ckpt4: extend_heap() called\n");
     char *bp;
     size_t size;
-
+    
     //allocate an even number of words to maintain alignment
     size = (words % 2) ? (words+1) * WSIZE : words * WSIZE;
     if ((long)(bp = mem_sbrk(size)) == -1) return NULL;
-
+    printf("ckpt4.1 - extend_heap()\n");
     //initialize free block header/footer and the epilogue header
     PUT(HDRP(bp), PACK(size, 0)); //free block header
     PUT(FTRP(bp), PACK(size, 0)); //free block footer
     PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); //new epilogue header
-
+    printf("ckpt4.2 - extend_heap()\n");
     //coalesce if the previous block was free
+    printf("ckpt4.3 EXIT extend_heap()\n");
     return coalesce(bp);
 }
 
@@ -251,6 +269,7 @@ static void *extend_heap(size_t words) {
 //returns pointer to the newly created coalesced free block
 static void *coalesce(void *bp) {
 
+    printf("ckpt6: coalesce() called\n");
     //get the allocation status of the previous and next blocks
     size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
     size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
@@ -260,13 +279,16 @@ static void *coalesce(void *bp) {
 
     //case 1: next and free blocks both allocated; no coalescing possible
     if(prev_alloc && next_alloc){
+        printf("ckpt6.1.1: Start case 1 - coalesce()\n");
         //add a block to the free list
         add_free_block(bp);
+        printf("ckpt6.1.2: End case 1 - coalesce()\n");
         return bp;
     }
 
     //case 2: next block is free but previous is not
     else if(prev_alloc && !next_alloc){
+        printf("ckpt6.2.1 Start case 2 - coalesce()\n");
         //delete next block from free list
         delete_free_block(NEXT_BLKP(bp));
 
@@ -279,16 +301,19 @@ static void *coalesce(void *bp) {
 
         //add the extended block to the free list
         add_free_block(bp);
+        printf("ckpt6.2.2: End case 2 - coalesce()\n");
     }
 
     //case 3: previous block is free but next is not
     else if(!prev_alloc && next_alloc){
+        printf("ckpt6.3.1: Start case 3 - coalesce()\n");
         //delete previous block from free list
         delete_free_block(PREV_BLKP(bp));
-
+        
         //extend the size of the given block by the size of the previous block
         size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-
+     
+        printf("ckpt6.3.1.1 -  coalesce()\n");
         //set allocation status to free for header and footer of the coalesced block
         PUT(FTRP(bp), PACK(size, 0));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
@@ -296,13 +321,17 @@ static void *coalesce(void *bp) {
         //set pointer of the coalesced block to pointer to previous block
         bp = PREV_BLKP(bp);
 
+        printf("ckpt6.3.1.2 -  coalesce()\n");
         //add the coalesced block to the free list
         add_free_block(bp);
+
+        printf("ckpt6.3.2: End case 3 - coalesce()\n");
     }
 
     //case 4: both the previous and next blocks are free
     else{
         //delete the next and previous blocks from the free list
+        printf("ckpt6.4.1: Start case 4 - coalesce()\n");
         delete_free_block(PREV_BLKP(bp));
         delete_free_block(NEXT_BLKP(bp));
 
@@ -317,23 +346,31 @@ static void *coalesce(void *bp) {
         bp = PREV_BLKP(bp);
 
         //add the coalesced block to the free list
-        add_free_block(bp);
+        add_free_block(bp);   
+        printf("ckpt6.4.2: End case 4 - coalesce()\n");
     }
+    printf("ckpt6.5 EXIT coalesce()\n");
     return bp;
 }
 
 //add a block to the front of the free list
 //parameter: block to be added to the free list
 static void add_free_block(void *bp) {
+    printf("ckpt8.1.1 - START add_free_block()\n");
     //set the next of the new free block to point at the start of the current free list
     NEXT_FREE_BLKP(bp) = free_ptr;
 
+    printf("ckpt8.1.2 -  add_free_block()\n");
     //set the previous of the current free list to point at the new free block
-    PREV_FREE_BLKP(free_ptr) = bp;
-
+    //ERROR 2? check if free is NULL
+    if(free_ptr != NULL)
+    {
+         PREV_FREE_BLKP(free_ptr) = bp;
+         printf("ckpt8.1.3 -add_free_block()\n");
+    }
     //set the previous of the new free block to NULL (it is the first element, so has no previous)
     PREV_FREE_BLKP(bp) = NULL;
-
+    printf("ckpt8.1.4 -  add_free_block()\n");
     //set the start of the free list to point to the new free block
     free_ptr = bp;
 }
@@ -341,8 +378,10 @@ static void add_free_block(void *bp) {
 //delete a block from the free list
 //parameter: block to be removed from the free list
 static void delete_free_block(void *bp) {
+    printf("ckpt7.1: delete_free_block() \n");
     //case 1: the block is not the head of the free list
     if(PREV_FREE_BLKP(bp)){
+        printf("ckpt7.1.1: case 1 -  delete_free_block() \n");
         //set the next pointer of the previous block to point to the next block
         NEXT_FREE_BLKP(PREV_FREE_BLKP(bp)) = NEXT_FREE_BLKP(bp);
 
@@ -352,13 +391,22 @@ static void delete_free_block(void *bp) {
 
     //case 2: the block is the head of the free list
     else{
+            printf("ckpt7.1.2: case 2 - delete_free_block() \n");
             //set the start of the free list to point at the next free block
             free_ptr = NEXT_FREE_BLKP(bp);
-
+            printf("ckpt7.1.2.1 - delete_free_block() \n");
+      
+            //ERROR 1. Make sure there is a valid next block
             //set the previous pointer of the next block to NULL
-            PREV_FREE_BLKP(NEXT_FREE_BLKP(bp)) = NULL;
+            if(free_ptr!=NULL)
+            { 
+               PREV_FREE_BLKP(NEXT_FREE_BLKP(bp)) = NULL;
+               printf("ckpt7.1.2.2 - delete_free_block() \n");
+            }
+            printf("ckpt7.1.2.3 - delete_free_block() \n");
     }
 
+    printf("ckpt7.2: EXIT delete_free_block() \n");
 }
 
 //find a free block of a certain size
@@ -376,35 +424,69 @@ static void *find_fit(size_t asize) {
 //allocate a block newsize bytes from free block pointed to by bp
 //create a new free block if the remainder of the old free block is large enough
 static void place(void *bp, size_t asize){
+    
+    printf("ckpt10.1.1 - START place()\n");
     size_t oldsize = GET_SIZE(HDRP(bp));
 
     //case 1: the remainder is large enough to create a new free block
     if((oldsize-asize) >= 2*DSIZE){
+        printf("ckpt10.1.1.1 - START case 1 - place()\n");
         //set allocation status of given block to not free
-        PUT(HDRP(bp), PACK(asize, 1));
-        PUT(FTRP(bp), PACK(asize, 1));
+        
+        //ERROR3 ? Cause segmetation error 
+        if(bp == NULL)
+        {
+             printf("ckpt10.1.1.2.0 - place()\n");
+        }
+        if(HDRP(bp)!=NULL)
+        {
 
+             printf("ckpt10.1.1.2.1.0 - place()\n");
+             // ERROR3 details
+             size_t val = PACK(asize,1);
+             PUT(HDRP(bp), val);
+             printf("ckpt10.1.1.2.1.1 - place()\n");
+        }
+        else
+        {
+             printf("ckpt10.1.1.2.2 - ERROR - place()\n");
+        }
+        if(FTRP(bp)!=NULL)
+        {
+             printf("ckpt10.1.1.3.1.0 - place()\n");
+             PUT(FTRP(bp), PACK(asize, 1));
+             printf("ckpt10.1.1.3.1.1 - place()\n");
+        }
+        else
+        {
+             printf("ckpt10.1.1.3.2 - ERROR - place()\n");
+        }
+        printf("ckpt10.1.1.4 - place()\n");
         //delete the allocated block from the free list
         delete_free_block(bp);
 
         //create a new free block starting right after the newly allocated block ends
         bp = NEXT_BLKP(bp);
 
+        printf("ckpt10.1.1.5 - place()\n");
         //set the allocation status of the new free block to free
         PUT(HDRP(bp), PACK(oldsize-asize, 0));
         PUT(FTRP(bp), PACK(oldsize-asize, 0));
 
         //add the new free block to the free list
         add_free_block(bp);
+        printf("ckpt10.1.1.6 - END case 1 - place()\n");
     }
 
     //case 2: the remainder is too small to create a new free block
     else{
+        printf("ckpt10.1.2.1 - START case 2 - place()\n");
         //set the allocation status of the newly allocated block to not free
         PUT(HDRP(bp), PACK(oldsize, 1));
         PUT(FTRP(bp), PACK(oldsize, 1));
 
         //delete the newly allocated block from the free list
         delete_free_block(bp);
-    }
+        printf("ckpt10.1.2.2 - END case 2 - place()\n");
+      }
 }
