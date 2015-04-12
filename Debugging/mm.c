@@ -48,7 +48,7 @@ team_t team = {
 uint64_t TUAB; /* total allocated and used bytes */
 uint64_t TFAB; /* total allcaoted but free bytes */
 uint64_t TAB;  /* total allocated bytes */
-char * PREV; /* previous meta data pointer */
+char * PREV; /* the last meta data pointer */
 
 
 /* self-defined macros and functions */
@@ -60,6 +60,7 @@ char * PREV; /* previous meta data pointer */
 #define MSIZE ALIGN(RMSIZE)
 #define NVALUE (mem_heap_lo()-1)
 
+/* helper function lv1 */
 /* getters and setters for the meta data*/
 char * metaNext(char * metaData)
 {
@@ -68,8 +69,9 @@ char * metaNext(char * metaData)
 void metaSetNext(char * metaData, char * value)
 {
 	if(metaData == value){
-		printf("WE JUST ASSIGNED A MD NEXT TO ITSELF\n");\
-	}
+		printf("ckpt28: ERROR :metadata next points to itself\n");\
+	     return NULL;
+     }
      if(metaData != NVALUE)
     	 *(char* *)metaData = value;
      else
@@ -85,8 +87,8 @@ void metaSetPrev(char * metaData, char * value)
 {
 
 	if(metaData == value){
-			printf("WE JUST ASSIGNED A MD PREV TO ITSELF\n");
-
+			printf("ckpt27: ERROR: metadata prev points to itself\n");
+               return NULL;
 		}
 
      if(metaData != NVALUE)
@@ -144,15 +146,23 @@ char *blockMetaStart(char * block)
      else
           return (char *)(-1);
 }
+/* check heap function, print out error if the heap is not linked by the linked list */
+void checkHeap()
+{
+     char * current= (char *)mem_heap_lo();
+     while(metaNext(current) != NVALUE)
+          current = metaNext(current);
+     if(current != PREV)
+          printf("ckpt30: the positive direction of linked list has an error\n");
 
-/* 
- * mm_init - initialize the malloc package.
- */
-int mm_init(void) {
-	printf("MM INIT IS CALLED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    return 0;
+     char * end = PREV;
+     while(metaPrev(end) != NVALUE)
+          end = metaPrev(end);
+     if(end != mem_heap_lo())
+          printf("ckpt31: the negative direction of the linked list has an error\n");
 }
 
+/* helper functions lv2 */
 /* find_free_block - called w/ malloc, attempts to find a space to insert new data. */
 char * find_free_block(size_t size)
 {
@@ -172,8 +182,9 @@ char * find_free_block(size_t size)
     	  printf("ckpt8 - trying to find a free block\n");
           while(current < (char *)mem_heap_hi())
           {
-        	 if (current == metaNext(current))
-        		 exit(0);
+        	/* modified by Mohan Liu */
+          //if (current == metaNext(current))
+        	//	 exit(0);
         	 // printf("ckpt9 - status of metadata we're inspecting\n");
         	  //mm_mallocStatus(current, NULL);
         	  // added in new conditions
@@ -207,7 +218,7 @@ char * split(size_t size, char * metaData)
 
 	 if(size < 0){
 		 printf("chpt23: OMFG!!!! SIZE IS LESS THAN ZERO\n");
-	 	 return;
+	 	 return NULL;
 	 }
 	 printf("ckpt14 : beginning of the split function\n");
 	 uint64_t oldsize = metaSize(metaData);
@@ -231,13 +242,21 @@ char * split(size_t size, char * metaData)
      printf("ckpt16: end of split function\n");
      return metaBlockStart(metaData);
 }
-
+/* print out the status of the block status allocated by malloc */
 void mm_mallocStatus(char *  metaData, size_t size){
-	printf("\n******Insertion Status (End of Heap, blocksize: %d)******\n", size);
+    printf("\n******Insertion Status (End of Heap, blocksize: %d)******\n", size);
     printf("inserted MD at %p\n", metaData);
     printf("metaPrev = %p\n", metaPrev(metaData));
     printf("metaNext = %p\n", metaNext(metaData));
     printf("metaSize = %ud\n", metaSize(metaData));
+}
+
+/* 
+ * mm_init - initialize the malloc package.
+ */
+int mm_init(void) {
+	printf("MM INIT IS CALLED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+    return 0;
 }
 
 /* 
@@ -296,7 +315,7 @@ void *mm_malloc(size_t size) {
 
 	               printf("ckpt5\n");
 	               /*status*/
-	               mm_mallocStatus(metaData, newsize);
+	               mm_mallocStatus(metaData, asize);
 
 
 	               /*update global variables */
@@ -381,7 +400,7 @@ void mm_free(void *ptr)
 		char * metaData = blockMetaStart((char*)ptr);
 
 		//Invalid Address
-         if(metaData < (char *) mem_heap_lo() | metaData > (char *) mem_heap_hi()){
+         if((metaData < (char *) mem_heap_lo())|| (metaData > (char *) mem_heap_hi())){
         	 printf("ckpt10 - invalid md address in free.\n");
               return NULL;
          }
