@@ -1,0 +1,349 @@
+Team Name:bteam
+Member 1 :Eugene H. Krabs:krabs@cs.rochester.edu
+Measuring performance with gettimeofday().
+
+Testing mm malloc
+Reading tracefile: coalescing.rep
+Checking mm_malloc for correctness, 
+ckpt0: mm_init() is called
+
+ckpt1 start of malloc 
+Malloc called with size: 4095
+ckpt6 - enter find_free_block
+ckpt7 - find_free_block cannot find a value free block
+ckpt1.5: No block big enough for insertion found
+ckpt2: insert a block at the end of the heap
+ckpt3: insert in the first block in the heap
+
+******Insertion Status (End of Heap, blocksize: 4096)******
+inserted MD at 0xb6157020
+metaPrev = 0xb615701f
+metaNext = 0xb615701f
+metaSize = 4096
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,1)(0xb6157020)
+ckpt43: traversing heap backwardly
+0xb6157020(4096,1)(0xb6157020)
+SUCCESSFUL INSERT
+
+
+ckpt1 start of malloc 
+Malloc called with size: 4095
+ckpt6 - enter find_free_block
+ckpt8 - starting to find a free block
+ckpt1.5: No block big enough for insertion found
+ckpt2: insert a block at the end of the heap
+ckpt4:insert in the 2nd or more block in the ehap
+
+******Insertion Status (End of Heap, blocksize: 4096)******
+inserted MD at 0xb6158040
+metaPrev = 0xb6157020
+metaNext = 0xb615701f
+metaSize = 4096
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,1)---->0xb6158040(4096,1)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(4096,1)---->0xb6157020(4096,1)(0xb6157020)
+SUCCESSFUL INSERT
+
+
+free called, trying to free block at 0xb6157040
+free called, trying to free metadata of the corresponding block at 0xb6157020
+ckpt11 - about to update metadata at 0xb6157020 & about to fusion
+ckpt11.1: pre-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,0)---->0xb6158040(4096,1)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(4096,1)---->0xb6157020(4096,0)(0xb6157020)
+ckpt12 -Fusion: No conditions hit.
+ckpt11.2: post-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,0)---->0xb6158040(4096,1)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(4096,1)---->0xb6157020(4096,0)(0xb6157020)
+
+free called, trying to free block at 0xb6158060
+free called, trying to free metadata of the corresponding block at 0xb6158040
+ckpt11 - about to update metadata at 0xb6158040 & about to fusion
+ckpt11.1: pre-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,0)---->0xb6158040(4096,0)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(4096,0)---->0xb6157020(4096,0)(0xb6157020)
+ckpt11.1.1: left fusion first case
+ckpt36: preprocessing heap check - leftFusion()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,0)---->0xb6158040(4096,0)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(4096,0)---->0xb6157020(4096,0)(0xb6157020)
+leftFusion called
+ORIGINAL CURRENT SIZE = 4096
+ORIGINAL LEFT SIZE = 4096
+NEW SIZE = 8224
+ckpt37: postprocessing heap check - leftFusion()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt43: traversing heap backwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt11.2: post-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt43: traversing heap backwardly
+0xb6157020(8224,0)(0xb6157020)
+
+ckpt1 start of malloc 
+Malloc called with size: 8190
+ckpt6 - enter find_free_block
+ckpt8 - starting to find a free block
+ckpt20: free block found in the heap
+ckpt17: original memroy block size : 8224
+ckpt18: after split, the old block size should be : 8192
+ckpt18.1: after split, the new block size should be : 0
+ckpt19: found a free block in malloc function, about to call split
+ckpt38: preprocessing heap checking - split()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt43: traversing heap backwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt14 : beginning of the split function
+ckpt15: setting up new metaData in split
+set prev error, metaData is NULL
+ckpt16: end of split function
+ckpt39: postprocessing heapchecking - split()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8192,1)---->0xb6159040(0,0)(0xb6159040)
+ckpt43: traversing heap backwardly
+0xb6159040(0,0)---->0xb6157020(8192,1)(0xb6157020)
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8192,1)---->0xb6159040(0,0)(0xb6159040)
+ckpt43: traversing heap backwardly
+0xb6159040(0,0)---->0xb6157020(8192,1)(0xb6157020)
+
+free called, trying to free block at 0xb6157040
+free called, trying to free metadata of the corresponding block at 0xb6157020
+ckpt11 - about to update metadata at 0xb6157020 & about to fusion
+ckpt11.1: pre-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8192,0)---->0xb6159040(0,0)(0xb6159040)
+ckpt43: traversing heap backwardly
+0xb6159040(0,0)---->0xb6157020(8192,0)(0xb6157020)
+ckpt11.1.4: right fusion first case
+ckpt38: preprocessing heap check - rightFusion()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8192,0)---->0xb6159040(0,0)(0xb6159040)
+ckpt43: traversing heap backwardly
+0xb6159040(0,0)---->0xb6157020(8192,0)(0xb6157020)
+rightFusion called
+ORIGINAL CURRENT SIZE = 8192
+ORIGINAL RIGHT SIZE = 0
+NEW SIZE = 8224
+ckpt39: postprocessing heap check - rightFusion()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt43: traversing heap backwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt11.2: post-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt43: traversing heap backwardly
+0xb6157020(8224,0)(0xb6157020)
+
+ckpt1 start of malloc 
+Malloc called with size: 4095
+ckpt6 - enter find_free_block
+ckpt8 - starting to find a free block
+ckpt20: free block found in the heap
+ckpt17: original memroy block size : 8224
+ckpt18: after split, the old block size should be : 4096
+ckpt18.1: after split, the new block size should be : 4096
+ckpt19: found a free block in malloc function, about to call split
+ckpt38: preprocessing heap checking - split()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt43: traversing heap backwardly
+0xb6157020(8224,0)(0xb6157020)
+ckpt14 : beginning of the split function
+ckpt15: setting up new metaData in split
+set prev error, metaData is NULL
+ckpt16: end of split function
+ckpt39: postprocessing heapchecking - split()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,1)---->0xb6158040(4096,0)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(4096,0)---->0xb6157020(4096,1)(0xb6157020)
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,1)---->0xb6158040(4096,0)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(4096,0)---->0xb6157020(4096,1)(0xb6157020)
+
+ckpt1 start of malloc 
+Malloc called with size: 4095
+ckpt6 - enter find_free_block
+ckpt8 - starting to find a free block
+ckpt1.5: No block big enough for insertion found
+ckpt2: insert a block at the end of the heap
+ckpt4:insert in the 2nd or more block in the ehap
+
+******Insertion Status (End of Heap, blocksize: 4096)******
+inserted MD at 0xb6159060
+metaPrev = 0xb6158040
+metaNext = 0xb615701f
+metaSize = 4096
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,1)---->0xb6158040(4096,0)---->0xb6159060(4096,1)(0xb6159060)
+ckpt43: traversing heap backwardly
+0xb6159060(4096,1)---->0xb6158040(4096,0)---->0xb6157020(4096,1)(0xb6157020)
+SUCCESSFUL INSERT
+
+
+free called, trying to free block at 0xb6157040
+free called, trying to free metadata of the corresponding block at 0xb6157020
+ckpt11 - about to update metadata at 0xb6157020 & about to fusion
+ckpt11.1: pre-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,0)---->0xb6158040(4096,0)---->0xb6159060(4096,1)(0xb6159060)
+ckpt43: traversing heap backwardly
+0xb6159060(4096,1)---->0xb6158040(4096,0)---->0xb6157020(4096,0)(0xb6157020)
+ckpt11.1.4: right fusion first case
+ckpt38: preprocessing heap check - rightFusion()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(4096,0)---->0xb6158040(4096,0)---->0xb6159060(4096,1)(0xb6159060)
+ckpt43: traversing heap backwardly
+0xb6159060(4096,1)---->0xb6158040(4096,0)---->0xb6157020(4096,0)(0xb6157020)
+rightFusion called
+ORIGINAL CURRENT SIZE = 4096
+ORIGINAL RIGHT SIZE = 4096
+NEW SIZE = 8224
+ckpt39: postprocessing heap check - rightFusion()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)---->0xb6159060(4096,1)(0xb6159060)
+ckpt43: traversing heap backwardly
+0xb6159060(4096,1)---->0xb6158040(4096,0)---->0xb6157020(8224,0)(0xb6157020)
+ckpt11.2: post-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)---->0xb6159060(4096,1)(0xb6159060)
+ckpt43: traversing heap backwardly
+0xb6159060(4096,1)---->0xb6158040(4096,0)---->0xb6157020(8224,0)(0xb6157020)
+
+free called, trying to free block at 0xb6159080
+free called, trying to free metadata of the corresponding block at 0xb6159060
+ckpt11 - about to update metadata at 0xb6159060 & about to fusion
+ckpt11.1: pre-fusion heap checking
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)---->0xb6159060(4096,0)(0xb6159060)
+ckpt43: traversing heap backwardly
+0xb6159060(4096,0)---->0xb6158040(4096,0)---->0xb6157020(8224,0)(0xb6157020)
+ckpt11.1.1: left fusion first case
+ckpt36: preprocessing heap check - leftFusion()
+ckpt34: checking heap
+ckpt33: the heap is fine
+Exit from checkHeap function
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)---->0xb6159060(4096,0)(0xb6159060)
+ckpt43: traversing heap backwardly
+0xb6159060(4096,0)---->0xb6158040(4096,0)---->0xb6157020(8224,0)(0xb6157020)
+leftFusion called
+ORIGINAL CURRENT SIZE = 4096
+ORIGINAL LEFT SIZE = 4096
+NEW SIZE = 8224
+ckpt37: postprocessing heap check - leftFusion()
+ckpt34: checking heap
+ckpt32: the positive direction of linked list has an error
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)---->0xb6159060(4096,0)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(8224,0)---->0xb6157020(8224,0)(0xb6157020)
+ckpt11.2: post-fusion heap checking
+ckpt34: checking heap
+ckpt32: the positive direction of linked list has an error
+ckpt43: traversing heap forwardly
+0xb6157020(8224,0)---->0xb6159060(4096,0)(0xb6158040)
+ckpt43: traversing heap backwardly
+0xb6158040(8224,0)---->0xb6157020(8224,0)(0xb6157020)
+
+ckpt1 start of malloc 
+Malloc called with size: 8190
+ckpt6 - enter find_free_block
+ckpt8 - starting to find a free block
+ckpt20: free block found in the heap
+ckpt17: original memroy block size : 8224
+ckpt18: after split, the old block size should be : 8192
+ckpt18.1: after split, the new block size should be : 0
+ckpt19: found a free block in malloc function, about to call split
+ckpt38: preprocessing heap checking - split()
+ckpt34: checking heap
+ckpt32: the positive direction of linked list has an error
+ckpt43: traversing heap forwardly
+0xb
