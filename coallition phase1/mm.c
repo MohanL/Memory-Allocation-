@@ -397,6 +397,63 @@ void doubleFusion(char * left, char * current, char * right){
 	//printf("ckpt41: postprocessing heap //check - doubleFusion()\n");
 	//checkHeap();
 }
+void leftCoalition(char * leftl, char * left, char * current)
+{
+     //printf("ckpt60: START leftCoalition\n");
+     if( (metaSize(leftl) > metaSize(current)) && (metaSize(leftl) > metaSize(left)) )
+     {
+          memcpy(metaBlockStart(left), metaBlockStart(leftl),metaSize(left));
+          
+          /* calcuate the new metadata */
+          char * new = leftl + metaSize(left)+MSIZE;
+          
+          /* modify the leftl metadata*/
+          metaSetSize(leftl,metaSize(left));
+          metaSetStatus(leftl,1);
+          metaSetNext(leftl,new);
+
+          metaSetSize(new,metaSize(leftl) + metaSize(current)+MSIZE);
+          metaSetStatus(new,0);
+          metaSetNext(new,metaNext(current));
+          metaSetPrev(new,leftl);
+
+          metaSetPrev(metaNext(current),new);
+     }
+     else if( (metaSize(current) > metaSize(leftl)) && (metaSize(current) > metaSize(left)) )
+     {
+          memcpy(metaBlockStart(left), metaBlockStart(current),metaSize(left));
+          
+          /* calcuate the new metadata */
+          char * new = metaBlockStart(current) + metaSize(current) - metaSize(left)-MSIZE;
+          
+          /* modify the leftl metadata*/
+          metaSetSize(new,metaSize(left));
+          metaSetStatus(new,1);
+          metaSetNext(new,metaNext(current));
+          metaSetPrev(new,leftl);
+
+          metaSetSize(left,metaSize(leftl) + metaSize(current)+MSIZE);
+          metaSetStatus(left,0);
+          metaSetNext(left,new);
+
+          metaSetPrev(metaNext(current),new);
+
+
+     }
+     //printf("ckpt61: END leftCoalition\n");
+}
+
+void rightCoalition(char * right, char * current)
+{
+     
+
+}
+
+void doubleCoalition(char * left,char * current,char * right)
+{
+
+}
+
 
 /*
 * mm_init - initialize the malloc package.
@@ -544,7 +601,8 @@ void mm_free(void *ptr){
 		//printf("ckpt11.1.2: left fusion second case\n");
 		leftFusion(prev,metaData);
 		metaSetPrev(next,prev);
-		}
+                    
+          }
 		else if( ( next != NVALUE )&&(prev != NVALUE)&&(metaStatus(next)==0)&&(metaStatus(prev)==1) ){
 			//printf("ckpt11.1.3: right fusion second case\n");
 			rightFusion(next,metaData);
@@ -562,6 +620,11 @@ void mm_free(void *ptr){
 			metaSetPrev(next_next,metaData);
 		}
 		else{
+               if((prev!=NVALUE) && (metaPrev(prev)!=NVALUE) && (metaStatus(prev) == 1) && (metaStatus(metaPrev(prev))==0) )
+                    leftCoalition(metaPrev(prev),prev,metaData);
+               //else if ()
+               
+
 			//printf("ckpt12 -Fusion: No conditions hit.\n");
 		}
 	}
