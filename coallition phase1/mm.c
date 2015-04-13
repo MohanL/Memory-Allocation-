@@ -20,21 +20,26 @@
 #include "mm.h"
 #include "memlib.h"
 
+/*********************************************************/
+/* Teammated updating board */
+/* latest update: skip list points to the next free block's metadata */
+/*********************************************************/
+
 /*********************************************************
 * NOTE TO STUDENTS: Before you do anything else, please
 * provide your team information in the following struct.
 ********************************************************/
 team_t team = {
 /* Team name */
-"bteam",
+"team1",
 /* First member's full name */
-"Eugene H. Krabs",
+"Mohan Liu",
 /* First member's email address */
-"krabs@cs.rochester.edu",
+"mliu26@u.rochester.edu",
 /* Second member's full name (leave blank if none) */
-"",
+"Evan Mclaughlin",
 /* Second member's email address (leave blank if none) */
-""
+"emclaug2@u.rochester.edu"
 };
 
 
@@ -55,10 +60,10 @@ char * PREV; /* the last meta data pointer */
 
 /* self-defined macros and functions */
 /* define meta data size */
-#define CSIZE sizeof(char *)
-#define SSIZE sizeof(size_t)
-#define BSIZE sizeof(int64_t)
-#define RMSIZE (CSIZE+CSIZE+SSIZE+BSIZE)
+#define CSIZE sizeof(char *)  /* next field, prev field */
+#define SSIZE sizeof(size_t)  /* size field */
+#define BSIZE sizeof(int64_t) /* status field */
+#define RMSIZE (CSIZE+CSIZE+SSIZE+BSIZE+CSIZE+CSIZE)
 #define MSIZE ALIGN(RMSIZE)
 #define NVALUE (mem_heap_lo()-1)
 
@@ -154,7 +159,28 @@ void metaSetPrev(char * metaData, char * value){
 		//printf("set status error, metaData is NULL\n");
 	}
 }
+
 */
+#define metaNextFree(metaData) (*(int *)((char *)((int)metaData + 2*CSIZE+SSIZE+BSIZE)))
+#define metaSetNextFree(metaData,value) (metaNextFree(metaData) = value)
+#define metaPrevFree(metaData) (*(int *)((char *)((int)metaData + 2*CSIZE+SSIZE+BSIZE+CSIZE)))
+
+void metaSetPrevFree(char * metaData,char *value)
+{
+	if(metaData == value){
+          //printf("ckpt27*: ERROR: metadata prev points to itself\n");
+		return NULL;
+	}
+
+	if(metaData != NVALUE){
+		char * addr = (char *)((int)metaData +2*CSIZE+SSIZE+BSIZE+CSIZE);
+		*(char* *)addr = value;
+	}
+	else{
+		//printf("set prev ERROR, metaData is NULL\n");
+	}
+}
+
 #define metaBlockStart(metaData) (char *)((int)metaData + MSIZE)
 /* return the start address of a memory block */
 /*char *metaBlockStart(char * metaData){
