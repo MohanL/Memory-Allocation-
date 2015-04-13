@@ -443,16 +443,54 @@ void leftCoalition(char * leftl, char * left, char * current)
      //printf("ckpt61: END leftCoalition\n");
 }
 
-void rightCoalition(char * right, char * current)
+void rightCoalition(char * current,char * right, char* rr)
 {
-     
+          
+     //printf("ckpt60: START leftCoalition\n");
+     if( (metaSize(rr) > metaSize(current)) && (metaSize(rr) > metaSize(right)) )
+     {
+          /* calcuate the new metadata */
+          char * new = metaBlockStart(rr)+metaSize(rr)-metaSize(right)-MSIZE;
+          
+          memcpy(metaBlockStart(right), metaBlockStart(new),metaSize(right));
+          
+          /* modify the new metadata*/
+          metaSetSize(new,metaSize(right));
+          metaSetStatus(new,1);
+          metaSetNext(new,metaNext(rr));
+
+          metaSetSize(current,metaSize(current) + metaSize(rr)+MSIZE);
+          metaSetStatus(current,0);
+          metaSetNext(current,new);
+          metaSetPrev(new,current);
+
+          metaSetPrev(metaNext(rr),new);
+     }
+     else if( (metaSize(current) > metaSize(rr)) && (metaSize(current) > metaSize(right)) )
+     {
+          /* calcuate the new metadata */
+          char * new = metaBlockStart(current)+metaSize(right);
+          
+          memcpy(metaBlockStart(right), metaBlockStart(new),metaSize(right));
+          
+          /* modify the new metadata*/
+          metaSetSize(new,metaSize(rr)+metaSize(current)+MSIZE);
+          metaSetStatus(new,0);
+          metaSetNext(new,metaNext(rr));
+
+          metaSetSize(current,metaSize(right));
+          metaSetStatus(current,1);
+          metaSetNext(current,new);
+          metaSetPrev(new,current);
+
+          metaSetPrev(metaNext(rr),new);
+
+
+     }
+     //printf("ckpt61: END leftCoalition\n");
 
 }
 
-void doubleCoalition(char * left,char * current,char * right)
-{
-
-}
 
 
 /*
@@ -622,8 +660,8 @@ void mm_free(void *ptr){
 		else{
                if((prev!=NVALUE) && (metaPrev(prev)!=NVALUE) && (metaStatus(prev) == 1) && (metaStatus(metaPrev(prev))==0) )
                     leftCoalition(metaPrev(prev),prev,metaData);
-               //else if ()
-               
+               else if((next!=NVALUE) && (metaNext(next)!=NVALUE) && (metaStatus(next) == 1) && (metaStatus(metaNext(next))==0) )
+                    rightCoalition(metaData,next,metaNext(next)); 
 
 			//printf("ckpt12 -Fusion: No conditions hit.\n");
 		}
