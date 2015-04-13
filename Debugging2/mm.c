@@ -67,9 +67,18 @@ team_t team = {
 #define NEXT_BLKP(bp) ((char *)(bp)+GET_SIZE(((char *)(bp)-WSIZE)))
 #define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
 
+
 //given free block ptr bp, compute address of next and prev free blocks
 #define NEXT_FREE_BLKP(bp) (*(void **)(bp+WSIZE))
 #define PREV_FREE_BLKP(bp) (*(void **)(bp))
+void *NEXT_FREE_BLKP(void * bp)
+{
+     if (bp == NULL)
+     {
+          printf("
+     }
+}
+
 
 #define MIN_BLOCK_SIZE CHUNKSIZE/WSIZE
 
@@ -396,7 +405,7 @@ static void delete_free_block(void *bp) {
             free_ptr = NEXT_FREE_BLKP(bp);
             printf("ckpt7.1.2.1 - delete_free_block() \n");
       
-            //ERROR 1. Make sure there is a valid next block
+            //ERROR1. Make sure there is a valid next block
             //set the previous pointer of the next block to NULL
             if(free_ptr!=NULL)
             { 
