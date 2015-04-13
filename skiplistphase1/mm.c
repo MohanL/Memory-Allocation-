@@ -537,8 +537,7 @@ int mm_init(void){
 void *mm_malloc(size_t size) {
 	//printf("\nckpt1 start of malloc \n");
 	//printf("Malloc called with size: %d\n", size);
-	int64_t size2 = (unsigned int)size;
-	int64_t asize = ALIGN(size2);
+	int64_t asize = ALIGN(size);
 	char * addr = find_free_block(asize);
 
 	if(addr == (char *) NVALUE){
